@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "actions/*/src/**/*",
+    "actions/*/test/**/*",
+    "packages/*/src/**/*",
+    "packages/*/test/**/*",
+    "scripts/**/*"
+  ]
+}

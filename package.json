@@ -1,0 +1,28 @@
+{
+  "name": "@zorb-run/zorb-actions",
+  "private": true,
+  "description": "Monorepo of published actions for the zorb workflow runner",
+  "license": "MIT",
+  "type": "module",
+  "workspaces": [
+    "actions/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "bun scripts/build.ts",
+    "new-package": "bun scripts/new-package.ts",
+    "test": "bun test packages actions",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.0",
+    "@types/minimist": "^1.2.5",
+    "minimist": "^1.2.8",
+    "prettier": "^3.3.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "bun": ">=1.3.13"
+  }
+}
