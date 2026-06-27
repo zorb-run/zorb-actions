@@ -21,6 +21,9 @@
     "dist",
     "src"
   ],
+  "peerDependencies": {
+    "zorb": "^0.1.2"
+  },
   "publishConfig": {
     "access": "public"
   }

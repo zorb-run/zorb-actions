@@ -1,5 +1,5 @@
-import type { ActionContext, ActionInputs } from '@zorb/action-helpers';
-import { input } from '@zorb/action-helpers';
+import type { ActionContext } from 'zorb/action';
+import { input, type ActionInputs } from '@zorb/action-helpers';
 
 export interface HelloOutputs {
   message: string;

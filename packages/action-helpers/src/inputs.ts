@@ -1,5 +1,5 @@
-import { ActionInputError } from './errors.ts';
-import type { ActionInputs } from './types.ts';
+import { ActionInputError } from './errors';
+import type { ActionInputs } from './types';
 
 /**
  * Input validation helpers. Each function reads a named field off the

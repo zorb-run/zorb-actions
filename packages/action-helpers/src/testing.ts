@@ -1,27 +1,31 @@
-import type { ActionContext, ActionLogger } from './types.ts';
+import type { ActionContext } from './types';
 
 /**
  * In-memory fakes for testing actions without spinning up zorb's runner.
- * Mirrors the protocol the real runner implements: `setSecret` / `setEnv`
- * append to internal lists, `log.*` writes to per-level arrays you can
- * assert against.
+ * `setSecret` / `setEnv` append to internal lists; `log.*` writes to per-level
+ * arrays you can assert against. The shape satisfies the canonical
+ * `ActionContext` from `zorb/action`.
  */
 
 export interface MockLog {
-  debug: string[];
-  info: string[];
-  warn: string[];
-  error: string[];
+  debug: unknown[];
+  info: unknown[];
+  warn: unknown[];
+  error: unknown[];
+}
+
+export interface MockLogger {
+  readonly messages: MockLog;
+  debug(msg: unknown): void;
+  info(msg: unknown): void;
+  warn(msg: unknown): void;
+  error(msg: unknown): void;
 }
 
 export interface MockContext extends ActionContext {
-  readonly log: MockActionLogger;
+  readonly log: MockLogger;
   readonly secrets: { name: string; value: string }[];
   readonly env: { name: string; value: string }[];
-  readonly messages: MockLog;
-}
-
-export interface MockActionLogger extends ActionLogger {
   readonly messages: MockLog;
 }
 
@@ -31,7 +35,7 @@ export interface MockContextOptions {
   stepId?: string;
 }
 
-export function mockLogger(): MockActionLogger {
+export function mockLogger(): MockLogger {
   const messages: MockLog = { debug: [], info: [], warn: [], error: [] };
   return {
     messages,
@@ -56,7 +60,7 @@ export function mockContext(opts: MockContextOptions = {}): MockContext {
   const env: { name: string; value: string }[] = [];
   return {
     cwd: opts.cwd ?? process.cwd(),
-    taskName: opts.taskName,
+    taskName: opts.taskName ?? 'test',
     stepId: opts.stepId,
     log,
     secrets,
