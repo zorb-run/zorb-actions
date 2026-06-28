@@ -8,8 +8,8 @@ Project-specific guidance for Claude Code working in this repo. Read alongside t
 workflow runner. Each workspace under `actions/` publishes to NPM as a `@zorb/*` package; each ships TS sources plus a
 compiled JS dist that zorb's runner loads at workflow execution time.
 
-Status: early development. Milestone roadmap lives in `../PLAN.md` (one level up). The B-track (B1 → B12) builds the
-published action collection.
+Status: early development. Scaffold + tooling are in place; the next milestones add published packages
+(`@zorb/secrets`, `@zorb/env`, `@zorb/aws`, etc.) one at a time.
 
 ## Layout
 
