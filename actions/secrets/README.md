@@ -39,10 +39,10 @@ secrets:
       keys: [STRIPE_KEY, DATABASE_URL]
 ```
 
-| input      | type              | required | default | description                           |
-| ---------- | ----------------- | -------- | ------- | ------------------------------------- |
-| `keys`     | string \| strings | yes      | —       | env var names to promote              |
-| `required` | boolean           | no       | `true`  | error if any named env var is missing |
+| input      | type               | required | default | description                           |
+| ---------- | ------------------ | -------- | ------- | ------------------------------------- |
+| `keys`     | string \| string[] | yes      | —       | env var names to promote              |
+| `required` | boolean            | no       | `true`  | error if any named env var is missing |
 
 ### `@zorb/secrets/load-dotenv`
 
@@ -56,12 +56,12 @@ secrets:
       only: [API_KEY, DB_URL]
 ```
 
-| input      | type              | required | default | description                                     |
-| ---------- | ----------------- | -------- | ------- | ----------------------------------------------- |
-| `path`     | string \| strings | no       | `.env`  | path(s) resolved relative to the workflow's cwd |
-| `only`     | string \| strings | no       | —       | only register keys in this list                 |
-| `except`   | string \| strings | no       | —       | skip keys in this list                          |
-| `required` | boolean           | no       | `true`  | error if any listed file is missing             |
+| input      | type               | required | default | description                                     |
+| ---------- | ------------------ | -------- | ------- | ----------------------------------------------- |
+| `path`     | string \| string[] | no       | `.env`  | path(s) resolved relative to the workflow's cwd |
+| `only`     | string \| string[] | no       | —       | only register keys in this list                 |
+| `except`   | string \| string[] | no       | —       | skip keys in this list                          |
+| `required` | boolean            | no       | `true`  | error if any listed file is missing             |
 
 Supported `.env` grammar: blank lines + `#` comments are skipped, `export ` prefix is stripped, double-quoted values
 interpret `\n \r \t \\ \"` escapes, single-quoted values are literal, unquoted values are trimmed. Multi-line values and
@@ -78,12 +78,12 @@ secrets:
       path: ./config/secrets.yml
 ```
 
-| input    | type              | required | default                 | description                                                          |
-| -------- | ----------------- | -------- | ----------------------- | -------------------------------------------------------------------- |
-| `path`   | string            | yes      | —                       | path resolved relative to the workflow's cwd                         |
-| `format` | string            | no       | inferred from extension | `json` or `yaml`; needed when the extension isn't `.json/.yml/.yaml` |
-| `only`   | string \| strings | no       | —                       | only register keys in this list                                      |
-| `except` | string \| strings | no       | —                       | skip keys in this list                                               |
+| input    | type               | required | default                 | description                                                          |
+| -------- | ------------------ | -------- | ----------------------- | -------------------------------------------------------------------- |
+| `path`   | string             | yes      | —                       | path resolved relative to the workflow's cwd                         |
+| `format` | string             | no       | inferred from extension | `json` or `yaml`; needed when the extension isn't `.json/.yml/.yaml` |
+| `only`   | string \| string[] | no       | —                       | only register keys in this list                                      |
+| `except` | string \| string[] | no       | —                       | skip keys in this list                                               |
 
 Decryption (SOPS, age, gpg) is not yet supported — feed `load-file` already-decrypted plaintext. Decryptor support ships
 in a follow-up.
