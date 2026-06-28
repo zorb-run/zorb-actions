@@ -124,16 +124,16 @@ export async function runConfigure(
 
 function validate(plan: ConfigurePlan): void {
   if (plan.roleArn !== undefined && plan.sessionName === undefined) {
-    throw new Error("@zorb/aws/credentials/configure: 'sessionName' is required when 'roleArn' is set");
+    throw new Error("@zorb/aws/configure: 'sessionName' is required when 'roleArn' is set");
   }
   if (plan.sessionName !== undefined && plan.roleArn === undefined) {
-    throw new Error("@zorb/aws/credentials/configure: 'sessionName' requires 'roleArn' to be set");
+    throw new Error("@zorb/aws/configure: 'sessionName' requires 'roleArn' to be set");
   }
   if (plan.durationSeconds !== undefined && plan.roleArn === undefined) {
-    throw new Error("@zorb/aws/credentials/configure: 'durationSeconds' only applies when assuming a role");
+    throw new Error("@zorb/aws/configure: 'durationSeconds' only applies when assuming a role");
   }
   if (plan.externalId !== undefined && plan.roleArn === undefined) {
-    throw new Error("@zorb/aws/credentials/configure: 'externalId' only applies when assuming a role");
+    throw new Error("@zorb/aws/configure: 'externalId' only applies when assuming a role");
   }
 }
 
@@ -186,7 +186,7 @@ export function defaultOps(): CredentialOps {
       );
       const c = res.Credentials;
       if (!c?.AccessKeyId || !c.SecretAccessKey) {
-        throw new Error('@zorb/aws/credentials/configure: sts:AssumeRole returned incomplete credentials');
+        throw new Error('@zorb/aws/configure: sts:AssumeRole returned incomplete credentials');
       }
       return {
         accessKeyId: c.AccessKeyId,
@@ -206,7 +206,7 @@ export function defaultOps(): CredentialOps {
       const sts = new STSClient(stsConfig);
       const res = await sts.send(new GetCallerIdentityCommand({}));
       if (!res.Account || !res.Arn || !res.UserId) {
-        throw new Error('@zorb/aws/credentials/configure: sts:GetCallerIdentity returned an incomplete response');
+        throw new Error('@zorb/aws/configure: sts:GetCallerIdentity returned an incomplete response');
       }
       return { accountId: res.Account, arn: res.Arn, userId: res.UserId };
     },

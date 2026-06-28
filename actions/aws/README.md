@@ -2,20 +2,20 @@
 
 AWS service actions for [zorb](https://github.com/zorb-run/zorb-cli) workflows. Built on the AWS SDK v3.
 
-> Status: first cut. Ships `credentials/configure`, `s3/sync`, `ecr/push`, and `lambda/invoke`. SSM and friends ship in
+> Status: first cut. Ships `configure`, `s3/sync`, `ecr/push`, and `lambda/invoke`. SSM and friends ship in
 > follow-up releases.
 
 ## Authentication
 
 zorb does not pass the calling shell's environment into actions implicitly, so the AWS SDK's default credential provider
 chain only sees what zorb has been told about explicitly. The recommended pattern is to run
-`@zorb/aws/credentials/configure` up front — it resolves credentials, verifies them via `sts:GetCallerIdentity`, and
+`@zorb/aws/configure` up front — it resolves credentials, verifies them via `sts:GetCallerIdentity`, and
 publishes them as both env vars (for subsequent SDK clients and `aws` CLI invocations) and as masked secrets (so they
 never leak into step output).
 
 ```yml
 secrets:
-  - uses: '@zorb/aws/credentials/configure'
+  - uses: '@zorb/aws/configure'
     with:
       profile: deploy
       region: us-east-1
@@ -29,12 +29,12 @@ tasks:
           destination: s3://my-site
 ```
 
-See [`@zorb/aws/credentials/configure`](#zorbawscredentialsconfigure) for the three supported modes (default chain,
+See [`@zorb/aws/configure`](#zorbawsconfigure) for the three supported modes (default chain,
 named profile, role assumption).
 
 ## Actions
 
-### `@zorb/aws/credentials/configure`
+### `@zorb/aws/configure`
 
 Resolve a set of AWS credentials and publish them to subsequent steps. Three modes, selected by which inputs are
 present:
@@ -47,18 +47,18 @@ present:
 
 ```yml
 # Mode 1 — pick whatever the default chain finds
-- uses: '@zorb/aws/credentials/configure'
+- uses: '@zorb/aws/configure'
   with:
     region: us-east-1
 
 # Mode 2 — use a named profile from ~/.aws/credentials
-- uses: '@zorb/aws/credentials/configure'
+- uses: '@zorb/aws/configure'
   with:
     profile: deploy
     region: us-east-1
 
 # Mode 3 — assume a role
-- uses: '@zorb/aws/credentials/configure'
+- uses: '@zorb/aws/configure'
   with:
     roleArn: arn:aws:iam::123456789012:role/Deploy
     sessionName: zorb-deploy
@@ -216,7 +216,7 @@ flow.
 
 In addition to the obvious per-action scopes:
 
-- `credentials/configure` needs `sts:GetCallerIdentity` always, plus `sts:AssumeRole` on the target role when used in
+- `configure` needs `sts:GetCallerIdentity` always, plus `sts:AssumeRole` on the target role when used in
   role-assumption mode.
 - `s3/sync` needs `s3:ListBucket`, `s3:GetObject`, `s3:PutObject`, and (when `delete: true`) `s3:DeleteObject` on the
   involved bucket(s).
