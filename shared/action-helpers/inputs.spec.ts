@@ -74,17 +74,46 @@ describe('input.boolean', () => {
   });
 });
 
+describe('input.strings', () => {
+  test('returns array values as-is', () => {
+    expect(input.strings({ keys: ['A', 'B'] }, 'keys')).toEqual(['A', 'B']);
+  });
+
+  test('wraps a single string into a one-element array', () => {
+    expect(input.strings({ path: '.env' }, 'path')).toEqual(['.env']);
+  });
+
+  test('rejects non-string array elements', () => {
+    expect(() => input.strings({ keys: ['A', 7] }, 'keys')).toThrow(/'keys\[1\]': expected a string, got number/);
+  });
+
+  test('rejects other types', () => {
+    expect(() => input.strings({ keys: 42 }, 'keys')).toThrow(/expected a string or array of strings, got number/);
+  });
+
+  test('throws on a missing required input', () => {
+    expect(() => input.strings({}, 'keys')).toThrow(/missing required input 'keys'/);
+  });
+
+  test('returns the default when missing', () => {
+    expect(input.strings({}, 'keys', { default: ['fallback'] })).toEqual(['fallback']);
+  });
+});
+
 describe('input.optional', () => {
   test('returns undefined when missing', () => {
     expect(input.optional.string({}, 'name')).toBeUndefined();
     expect(input.optional.number({}, 'n')).toBeUndefined();
     expect(input.optional.boolean({}, 'flag')).toBeUndefined();
+    expect(input.optional.strings({}, 'keys')).toBeUndefined();
   });
 
   test('coerces when present', () => {
     expect(input.optional.string({ name: 'x' }, 'name')).toBe('x');
     expect(input.optional.number({ n: '5' }, 'n')).toBe(5);
     expect(input.optional.boolean({ flag: 'yes' }, 'flag')).toBe(true);
+    expect(input.optional.strings({ keys: 'one' }, 'keys')).toEqual(['one']);
+    expect(input.optional.strings({ keys: ['a', 'b'] }, 'keys')).toEqual(['a', 'b']);
   });
 });
 

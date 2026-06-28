@@ -8,8 +8,8 @@ Project-specific guidance for Claude Code working in this repo. Read alongside t
 workflow runner. Each workspace under `actions/` publishes to NPM as a `@zorb/*` package; each ships TS sources plus a
 compiled JS dist that zorb's runner loads at workflow execution time.
 
-Status: early development. Scaffold + tooling are in place; the next milestones add published packages
-(`@zorb/secrets`, `@zorb/env`, `@zorb/aws`, etc.) one at a time.
+Status: early development. Scaffold + tooling are in place; the next milestones add published packages (`@zorb/secrets`,
+`@zorb/env`, `@zorb/aws`, etc.) one at a time.
 
 ## Layout
 
