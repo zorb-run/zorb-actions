@@ -86,12 +86,33 @@ describe('@zorb/env/load-ini', () => {
     await expect(action({ path: 'nope.ini' }, ctx)).rejects.toThrow(/file not found: nope\.ini/);
   });
 
-  test('errors when a chosen section contains a nested object', async () => {
+  test('errors when a chosen section contains a nested sub-section', async () => {
+    // `ini` parses [foo.bar] into { foo: { bar: { baz: '1' } } }, so picking
+    // `section: foo` exposes `bar` as a nested object — which can't be
+    // coerced to a single env value.
     await writeFile(join(tmp, 'config.ini'), '[foo.bar]\nbaz=1\n');
     const ctx = mockContext({ cwd: tmp });
 
     await expect(action({ path: 'config.ini', section: 'foo' }, ctx)).rejects.toThrow(
       /value for 'bar' must be a string, number, or boolean \(got object\)/,
+    );
+  });
+
+  test('errors on array-valued top-level keys', async () => {
+    await writeFile(join(tmp, 'config.ini'), 'items[]=a\nitems[]=b\n');
+    const ctx = mockContext({ cwd: tmp });
+
+    await expect(action({ path: 'config.ini' }, ctx)).rejects.toThrow(
+      /value for 'items' must be a string, number, or boolean \(got array\)/,
+    );
+  });
+
+  test('errors on array-valued keys inside a chosen section', async () => {
+    await writeFile(join(tmp, 'config.ini'), '[s]\nitems[]=a\nitems[]=b\n');
+    const ctx = mockContext({ cwd: tmp });
+
+    await expect(action({ path: 'config.ini', section: 's' }, ctx)).rejects.toThrow(
+      /value for 'items' must be a string, number, or boolean \(got array\)/,
     );
   });
 

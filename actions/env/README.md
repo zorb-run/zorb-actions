@@ -86,8 +86,10 @@ TOML support is planned and will land in a follow-up release.
 Load env vars from an INI file (parsed via the [`ini`](https://www.npmjs.com/package/ini) package). INI is inherently
 sectioned, so this loader picks one slice of the file per invocation:
 
-- By default, only top-level keys (those above any `[section]` header) are loaded.
-- Set `section: foo` to load keys from a specific `[foo]` section instead.
+- By default, only top-level keys (those above any `[section]` header) are loaded. Section bodies — including dotted
+  sub-sections like `[foo.bar]`, which `ini` parses into nested objects — are ignored.
+- Set `section: foo` to load keys from `[foo]` instead. Inside the chosen section, nested objects (from `[foo.bar]`) and
+  array-valued keys (`key[]=`) error rather than being silently dropped.
 
 ```yml
 steps:
@@ -106,7 +108,7 @@ steps:
 | `only`    | string \| string[] | no       | —       | only register keys in this list (source key)             |
 | `except`  | string \| string[] | no       | —       | skip keys in this list (source key)                      |
 
-Nested sub-sections and array-valued keys are rejected — flatten or pick a leaf section.
+Array-valued keys at the top level also error, since arrays don't map to a single env-var value.
 
 ## Secrets vs env
 

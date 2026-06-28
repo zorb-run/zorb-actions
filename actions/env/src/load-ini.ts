@@ -11,12 +11,14 @@ import { input, type ActionInputs } from '@/shared/action-helpers';
  * picks one slice of the file per invocation:
  *
  *   - By default, only top-level keys (those above any `[section]` header) are
- *     loaded. Section bodies are ignored.
- *   - Set `section: foo` to load keys from a specific `[foo]` section instead.
+ *     loaded. Section bodies — including dotted sub-sections like `[foo.bar]`,
+ *     which `ini` parses into nested objects — are ignored.
+ *   - Set `section: foo` to load keys from `[foo]` instead. Inside the chosen
+ *     section, nested objects (from `[foo.bar]`) and array-valued keys
+ *     (repeated `key[]=`) error — flatten the file or pick a leaf section.
  *
- * Nested sub-sections (`[foo.bar]` in dot-notation, or nested objects from the
- * INI parser) are rejected — flatten or pick a leaf section. Array-valued keys
- * (repeated `key[]=`) are likewise rejected.
+ * Array-valued keys at the top level also error, since arrays don't map to a
+ * single env-var value.
  *
  * `only:` / `except:` filter on the source key (as it appears in the chosen
  * scope). `prefix:` is applied after filtering, before registration.
@@ -80,7 +82,11 @@ function pickScope(
 function extractTopLevel(parsed: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [name, value] of Object.entries(parsed)) {
-    if (value !== null && typeof value === 'object') continue;
+    // Section objects (from `[section]` headers, including dotted sub-sections
+    // like `[foo.bar]`) are skipped — they belong to the section-scope path.
+    // Arrays fall through to coerceValue, which rejects them with a clear
+    // error so misconfigured `key[]=` entries don't get silently dropped.
+    if (value !== null && typeof value === 'object' && !Array.isArray(value)) continue;
     out[name] = value;
   }
   return out;
