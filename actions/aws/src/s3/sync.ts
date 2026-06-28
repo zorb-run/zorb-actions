@@ -201,7 +201,7 @@ export async function runDownload(
       skipped++;
       continue;
     }
-    const target = resolve(destination.path, ...obj.key.split('/'));
+    const target = safeJoin(destination.path, obj.key, obj.fullKey);
     if (opts.dryRun) {
       context.log.info(`(dry-run) download ${target}`);
     } else {
@@ -231,22 +231,40 @@ export async function runDownload(
 
 async function diffLocalToRemote(local: LocalFile, remote: RemoteObject | undefined): Promise<'copy' | 'skip'> {
   if (!remote) return 'copy';
-  if (remote.etag.includes('-')) {
-    return remote.size === local.size ? 'skip' : 'copy';
-  }
+  if (remote.size !== local.size) return 'copy';
+  if (remote.etag.includes('-')) return 'skip';
   const md5 = await hashFile(local.abs);
   return md5 === remote.etag ? 'skip' : 'copy';
 }
 
 async function diffRemoteToLocal(remote: RemoteObject, local: LocalFile): Promise<'copy' | 'skip'> {
-  if (remote.etag.includes('-')) {
-    return remote.size === local.size ? 'skip' : 'copy';
-  }
+  if (remote.size !== local.size) return 'copy';
+  if (remote.etag.includes('-')) return 'skip';
   const md5 = await hashFile(local.abs);
   return md5 === remote.etag ? 'skip' : 'copy';
 }
 
+/**
+ * Resolve a remote object's key into a destination filesystem path while
+ * rejecting any path that would escape the destination root (e.g. an S3 key
+ * containing `..` segments). S3 keys are attacker-controllable in many
+ * deployment models, so the destination root must be a hard boundary.
+ */
+function safeJoin(root: string, relativeKey: string, fullKey: string): string {
+  const target = resolve(root, ...relativeKey.split('/'));
+  const rootWithSep = root.endsWith(sep) ? root : root + sep;
+  if (target !== root && !target.startsWith(rootWithSep)) {
+    throw new Error(
+      `@zorb/aws/s3/sync: refusing to write outside destination: key '${fullKey}' resolves to '${target}'`,
+    );
+  }
+  return target;
+}
+
 export function parseLocation(raw: string, cwd: string, field: string): Location {
+  if (raw.trim() === '') {
+    throw new Error(`@zorb/aws/s3/sync: ${field} cannot be empty`);
+  }
   if (raw.startsWith('s3://')) {
     const rest = raw.slice('s3://'.length);
     const slash = rest.indexOf('/');
@@ -278,7 +296,16 @@ export function makeFilter(exclude: string[] | undefined, include: string[] | un
   };
 }
 
-/** Convert a `*` / `**` / `?` glob into an anchored regex matching forward-slash paths. */
+/**
+ * Convert a `*` / `**` / `?` glob into an anchored regex matching forward-slash paths.
+ *
+ * `**` semantics follow gitignore / picomatch:
+ * - `**` on its own (or as `**` at end-of-pattern) matches any number of path segments.
+ * - `**\/` (followed by more pattern) matches zero or more full path segments and a
+ *   trailing `/`, so `**\/foo.js` matches `foo.js`, `a/foo.js`, `a/b/foo.js` — but
+ *   never `barfoo.js`, because the boundary is preserved.
+ * - `*` and `?` stay within a single segment (never match `/`).
+ */
 export function globToRegExp(glob: string): RegExp {
   let re = '^';
   let i = 0;
@@ -286,9 +313,15 @@ export function globToRegExp(glob: string): RegExp {
     const c = glob[i];
     if (c === '*') {
       if (glob[i + 1] === '*') {
-        re += '.*';
         i += 2;
-        if (glob[i] === '/') i++;
+        if (glob[i] === '/') {
+          // `**/` — zero or more full path segments, each followed by `/`.
+          re += '(?:[^/]+/)*';
+          i++;
+        } else {
+          // `**` — match anything (including slashes).
+          re += '.*';
+        }
       } else {
         re += '[^/]*';
         i++;

@@ -105,6 +105,11 @@ describe('parseLocation', () => {
     expect(() => parseLocation('s3://', '/cwd', 'source')).toThrow(/must include a bucket/);
     expect(() => parseLocation('s3:///foo', '/cwd', 'source')).toThrow(/must include a bucket/);
   });
+
+  test('rejects empty / whitespace-only inputs', () => {
+    expect(() => parseLocation('', '/cwd', 'source')).toThrow(/source cannot be empty/);
+    expect(() => parseLocation('   ', '/cwd', 'destination')).toThrow(/destination cannot be empty/);
+  });
 });
 
 describe('globToRegExp', () => {
@@ -117,6 +122,18 @@ describe('globToRegExp', () => {
     expect(globToRegExp('**/*.js').test('foo/bar.js')).toBe(true);
     expect(globToRegExp('**/*.js').test('foo/baz/qux.js')).toBe(true);
     expect(globToRegExp('docs/**').test('docs/a/b/c.md')).toBe(true);
+  });
+
+  test('**/ requires a segment boundary', () => {
+    // **/foo.js matches foo.js, a/foo.js, a/b/foo.js — never barfoo.js
+    expect(globToRegExp('**/foo.js').test('foo.js')).toBe(true);
+    expect(globToRegExp('**/foo.js').test('a/foo.js')).toBe(true);
+    expect(globToRegExp('**/foo.js').test('a/b/foo.js')).toBe(true);
+    expect(globToRegExp('**/foo.js').test('barfoo.js')).toBe(false);
+    // docs/**/a requires that 'a' sits on its own segment under docs/
+    expect(globToRegExp('docs/**/a').test('docs/a')).toBe(true);
+    expect(globToRegExp('docs/**/a').test('docs/x/a')).toBe(true);
+    expect(globToRegExp('docs/**/a').test('docs/ba')).toBe(false);
   });
 
   test('? matches one non-slash char', () => {
@@ -359,5 +376,23 @@ describe('runDownload', () => {
     );
 
     expect(result).toEqual({ uploaded: 0, downloaded: 0, deleted: 0, skipped: 1 });
+  });
+
+  test('refuses to write outside the destination root', async () => {
+    const body = Buffer.from('pwn');
+    const ops = fakeOps([
+      { fullKey: '../../etc/escape.txt', key: '../../etc/escape.txt', size: body.length, etag: md5(body), body },
+    ]);
+
+    const ctx = mockContext({ cwd: dir });
+    await expect(
+      runDownload(
+        { kind: 's3', bucket: 'my-bucket', prefix: '' },
+        { kind: 'local', path: dir },
+        { deletes: false, dryRun: false, filter: () => true },
+        ops,
+        ctx,
+      ),
+    ).rejects.toThrow(/refusing to write outside destination/);
   });
 });

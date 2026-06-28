@@ -2,16 +2,15 @@
 
 AWS service actions for [zorb](https://github.com/zorb-run/zorb-cli) workflows. Built on the AWS SDK v3.
 
-> Status: first cut. Ships `configure`, `s3/sync`, `ecr/push`, and `lambda/invoke`. SSM and friends ship in
-> follow-up releases.
+> Status: first cut. Ships `configure`, `s3/sync`, `ecr/push`, and `lambda/invoke`. SSM and friends ship in follow-up
+> releases.
 
 ## Authentication
 
 zorb does not pass the calling shell's environment into actions implicitly, so the AWS SDK's default credential provider
-chain only sees what zorb has been told about explicitly. The recommended pattern is to run
-`@zorb/aws/configure` up front — it resolves credentials, verifies them via `sts:GetCallerIdentity`, and
-publishes them as both env vars (for subsequent SDK clients and `aws` CLI invocations) and as masked secrets (so they
-never leak into step output).
+chain only sees what zorb has been told about explicitly. The recommended pattern is to run `@zorb/aws/configure` up
+front — it resolves credentials, verifies them via `sts:GetCallerIdentity`, and publishes them as both env vars (for
+subsequent SDK clients and `aws` CLI invocations) and as masked secrets (so they never leak into step output).
 
 ```yml
 secrets:
@@ -29,8 +28,8 @@ tasks:
           destination: s3://my-site
 ```
 
-See [`@zorb/aws/configure`](#zorbawsconfigure) for the three supported modes (default chain,
-named profile, role assumption).
+See [`@zorb/aws/configure`](#zorbawsconfigure) for the three supported modes (default chain, named profile, role
+assumption).
 
 ## Actions
 
@@ -153,22 +152,25 @@ steps:
       createRepository: true
 ```
 
-| input              | type               | required | default                              | description                                                                                     |
-| ------------------ | ------------------ | -------- | ------------------------------------ | ----------------------------------------------------------------------------------------------- |
-| `image`            | string             | yes      | —                                    | local image reference (`name:tag`, image ID, etc.)                                              |
-| `repository`       | string             | yes      | —                                    | ECR repository name (no registry prefix)                                                        |
-| `tags`             | string \| string[] | no       | `['latest']`                         | tags to publish under                                                                           |
-| `region`           | string             | no       | `AWS_REGION` / `AWS_DEFAULT_REGION`  | AWS region of the ECR registry                                                                  |
-| `accountId`        | string             | no       | resolved via `sts:GetCallerIdentity` | AWS account ID owning the registry                                                              |
-| `createRepository` | boolean            | no       | `false`                              | create the repository (via `ecr:DescribeRepositories` + `CreateRepository`) if it doesn't exist |
-| `imageScanOnPush`  | boolean            | no       | `true`                               | scan-on-push setting when creating the repository                                               |
-| `immutable`        | boolean            | no       | `false`                              | use `IMMUTABLE` tag mutability when creating the repository                                     |
+| input              | type               | required | default                             | description                                                                                     |
+| ------------------ | ------------------ | -------- | ----------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `image`            | string             | yes      | —                                   | local image reference (`name:tag`, image ID, etc.)                                              |
+| `repository`       | string             | yes      | —                                   | ECR repository name (no registry prefix)                                                        |
+| `tags`             | string \| string[] | no       | `['latest']`                        | tags to publish under                                                                           |
+| `region`           | string             | no       | `AWS_REGION` / `AWS_DEFAULT_REGION` | AWS region of the ECR registry                                                                  |
+| `createRepository` | boolean            | no       | `false`                             | create the repository (via `ecr:DescribeRepositories` + `CreateRepository`) if it doesn't exist |
+| `imageScanOnPush`  | boolean            | no       | `true`                              | scan-on-push setting when creating the repository                                               |
+| `immutable`        | boolean            | no       | `false`                             | use `IMMUTABLE` tag mutability when creating the repository                                     |
 
-| output       | type     | description                                            |
-| ------------ | -------- | ------------------------------------------------------ |
-| `registry`   | string   | `{account}.dkr.ecr.{region}.amazonaws.com`             |
-| `repository` | string   | the repository name (as supplied)                      |
-| `imageUris`  | string[] | one fully-qualified `registry/repo:tag` per pushed tag |
+| output       | type     | description                                                          |
+| ------------ | -------- | -------------------------------------------------------------------- |
+| `registry`   | string   | registry host (e.g. `{account}.dkr.ecr.{region}.amazonaws.com[.cn]`) |
+| `accountId`  | string   | AWS account id extracted from the registry host                      |
+| `repository` | string   | the repository name (as supplied)                                    |
+| `imageUris`  | string[] | one fully-qualified `registry/repo:tag` per pushed tag               |
+
+The registry URL comes from the `proxyEndpoint` returned by `ecr:GetAuthorizationToken`, so the action works unmodified
+in non-standard partitions (AWS China's `amazonaws.com.cn`, GovCloud, etc.).
 
 The action shells out to `docker` for `login`/`tag`/`push`, so a working Docker CLI must be on PATH. Authentication uses
 `ecr:GetAuthorizationToken` over the default credential chain — there's no need to run `aws ecr get-login-password`
@@ -222,7 +224,6 @@ In addition to the obvious per-action scopes:
   involved bucket(s).
 - `ecr/push` needs `ecr:GetAuthorizationToken`, `ecr:BatchCheckLayerAvailability`, `ecr:CompleteLayerUpload`,
   `ecr:InitiateLayerUpload`, `ecr:PutImage`, `ecr:UploadLayerPart`, and (when `createRepository: true`)
-  `ecr:DescribeRepositories` + `ecr:CreateRepository`. It also calls `sts:GetCallerIdentity` unless `accountId` is set
-  explicitly.
+  `ecr:DescribeRepositories` + `ecr:CreateRepository`.
 - `lambda/invoke` needs `lambda:InvokeFunction` on the target function (or `*` for cross-version invocation when a
   `qualifier` is set).

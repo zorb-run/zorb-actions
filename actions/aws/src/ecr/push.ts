@@ -7,13 +7,13 @@ import {
   GetAuthorizationTokenCommand,
   RepositoryNotFoundException,
 } from '@aws-sdk/client-ecr';
-import { GetCallerIdentityCommand, STSClient, type STSClientConfig } from '@aws-sdk/client-sts';
 import type { ActionContext } from 'zorb/action';
 import { input, type ActionInputs } from '@/shared/action-helpers';
 
 export interface PushOutputs {
   registry: string;
   repository: string;
+  accountId: string;
   imageUris: string[];
 }
 
@@ -25,10 +25,6 @@ export interface EcrOps {
   getAuthorizationToken(): Promise<{ username: string; password: string; endpoint: string }>;
   describeRepository(name: string): Promise<{ exists: boolean }>;
   createRepository(name: string, opts: { scanOnPush: boolean; immutable: boolean }): Promise<void>;
-}
-
-export interface StsOps {
-  getAccountId(): Promise<string>;
 }
 
 /**
@@ -46,7 +42,6 @@ export interface PushPlan {
   repository: string;
   tags: string[];
   region: string;
-  accountId: string | undefined;
   createRepository: boolean;
   imageScanOnPush: boolean;
   immutable: boolean;
@@ -54,10 +49,10 @@ export interface PushPlan {
 
 /**
  * Push a local Docker image to an Amazon ECR repository under one or more
- * tags. Resolves the registry URL from the caller's AWS account (looked up
- * via STS unless overridden), authenticates `docker` against ECR via
- * `GetAuthorizationToken`, then re-tags and pushes the image for each
- * requested tag.
+ * tags. The registry URL is taken from `GetAuthorizationToken`'s
+ * `proxyEndpoint` rather than constructed from `account + region`, so the
+ * action is correct in non-standard partitions (AWS China's
+ * `amazonaws.com.cn`, GovCloud, etc.).
  *
  * `createRepository: true` calls `DescribeRepositories` first; if the
  * repository does not exist it is created with the supplied
@@ -65,7 +60,7 @@ export interface PushPlan {
  * surfaces as the usual `docker push` failure.
  *
  * Requires a working `docker` CLI on PATH and AWS credentials resolvable via
- * the default provider chain.
+ * the default provider chain (use `@zorb/aws/configure` to publish them).
  */
 export async function action(rawInputs: ActionInputs, context: ActionContext): Promise<PushOutputs> {
   const plan: PushPlan = {
@@ -73,7 +68,6 @@ export async function action(rawInputs: ActionInputs, context: ActionContext): P
     repository: input.string(rawInputs, 'repository'),
     tags: input.optional.strings(rawInputs, 'tags') ?? ['latest'],
     region: resolveRegion(input.optional.string(rawInputs, 'region')),
-    accountId: input.optional.string(rawInputs, 'accountId'),
     createRepository: input.boolean(rawInputs, 'createRepository', { default: false }),
     imageScanOnPush: input.boolean(rawInputs, 'imageScanOnPush', { default: true }),
     immutable: input.boolean(rawInputs, 'immutable', { default: false }),
@@ -84,18 +78,14 @@ export async function action(rawInputs: ActionInputs, context: ActionContext): P
   }
 
   const ecr = new ECRClient(clientConfig(plan.region));
-  const sts = new STSClient(clientConfig(plan.region) as STSClientConfig);
-  return runPush(plan, { ecr: defaultEcrOps(ecr), sts: defaultStsOps(sts), docker: defaultDockerOps() }, context);
+  return runPush(plan, { ecr: defaultEcrOps(ecr), docker: defaultDockerOps() }, context);
 }
 
 export async function runPush(
   plan: PushPlan,
-  deps: { ecr: EcrOps; sts: StsOps; docker: DockerOps },
+  deps: { ecr: EcrOps; docker: DockerOps },
   context: ActionContext,
 ): Promise<PushOutputs> {
-  const accountId = plan.accountId ?? (await deps.sts.getAccountId());
-  const registry = `${accountId}.dkr.ecr.${plan.region}.amazonaws.com`;
-
   if (plan.createRepository) {
     const { exists } = await deps.ecr.describeRepository(plan.repository);
     if (!exists) {
@@ -108,6 +98,9 @@ export async function runPush(
   }
 
   const auth = await deps.ecr.getAuthorizationToken();
+  const registry = parseRegistryHost(auth.endpoint);
+  const accountId = parseAccountId(registry);
+
   await deps.docker.login(registry, auth.username, auth.password);
 
   const imageUris: string[] = [];
@@ -119,11 +112,28 @@ export async function runPush(
     imageUris.push(target);
   }
 
-  return { registry, repository: plan.repository, imageUris };
+  return { registry, repository: plan.repository, accountId, imageUris };
+}
+
+export function parseRegistryHost(proxyEndpoint: string): string {
+  try {
+    const url = new URL(proxyEndpoint);
+    return url.host;
+  } catch {
+    throw new Error(`@zorb/aws/ecr/push: ECR returned a malformed proxyEndpoint '${proxyEndpoint}'`);
+  }
+}
+
+export function parseAccountId(registryHost: string): string {
+  const match = /^(\d+)\.dkr\.ecr\./.exec(registryHost);
+  if (!match) {
+    throw new Error(`@zorb/aws/ecr/push: could not extract account id from registry '${registryHost}'`);
+  }
+  return match[1]!;
 }
 
 function resolveRegion(explicit: string | undefined): string {
-  if (explicit !== undefined && explicit !== '') return explicit;
+  if (explicit !== undefined) return explicit;
   const fromEnv = process.env.AWS_REGION ?? process.env.AWS_DEFAULT_REGION;
   if (fromEnv !== undefined && fromEnv !== '') return fromEnv;
   throw new Error(
@@ -171,18 +181,6 @@ export function defaultEcrOps(client: ECRClient): EcrOps {
           imageTagMutability: opts.immutable ? 'IMMUTABLE' : 'MUTABLE',
         }),
       );
-    },
-  };
-}
-
-export function defaultStsOps(client: STSClient): StsOps {
-  return {
-    async getAccountId() {
-      const res = await client.send(new GetCallerIdentityCommand({}));
-      if (!res.Account) {
-        throw new Error('@zorb/aws/ecr/push: sts:GetCallerIdentity returned no account');
-      }
-      return res.Account;
     },
   };
 }
