@@ -8,8 +8,8 @@ Project-specific guidance for Claude Code working in this repo. Read alongside t
 workflow runner. Each workspace under `actions/` publishes to NPM as a `@zorb/*` package; each ships TS sources plus a
 compiled JS dist that zorb's runner loads at workflow execution time.
 
-Status: early development. Milestone roadmap lives in `../PLAN.md` (one level up). The B-track (B1 → B12) builds the
-published action collection.
+Status: early development. Scaffold + tooling are in place; the next milestones add published packages
+(`@zorb/secrets`, `@zorb/env`, `@zorb/aws`, etc.) one at a time.
 
 ## Layout
 
@@ -38,13 +38,13 @@ configured in `tsconfig.base.json`:
 
 ```jsonc
 "paths": {
-  "@shared/*": ["./shared/*"]
+  "@/shared/*": ["./shared/*"]
 }
 ```
 
-So `import { input } from '@shared/action-helpers'` resolves to `./shared/action-helpers/index.ts` at compile time, and
-`@shared/action-helpers/testing` resolves to `./shared/action-helpers/testing.ts`. Future shared modules
-(`@shared/utils`, `@shared/types`, …) plug in under the same wildcard with no tsconfig edit.
+So `import { input } from '@/shared/action-helpers'` resolves to `./shared/action-helpers/index.ts` at compile time, and
+`@/shared/action-helpers/testing` resolves to `./shared/action-helpers/testing.ts`. Future shared modules
+(`@/shared/utils`, `@/shared/types`, …) plug in under the same wildcard with no tsconfig edit.
 
 At build time `scripts/build.ts` bundles the resolved source into each action's `dist/`, so the published `@zorb/<name>`
 package has zero runtime dependency on the helpers. Consumers install one package per action, not a dep graph.
@@ -58,7 +58,7 @@ Every action file exports a named `action` function:
 
 ```ts
 import type { ActionContext } from 'zorb/action';
-import { input, type ActionInputs } from '@shared/action-helpers';
+import { input, type ActionInputs } from '@/shared/action-helpers';
 
 export async function action(rawInputs: ActionInputs, context: ActionContext): Promise<Outputs | void> {
   …
@@ -92,7 +92,7 @@ Always run typecheck + tests before committing.
   `src/hello.spec.ts`). The build script filters `*.spec.ts` out of action entrypoints automatically.
 - Use `path.resolve` / `path.join` for filesystem paths. No string concatenation with `/`.
 - Action files should be small and pure: validate inputs at the top, do the work, return outputs.
-- Validation goes through `@shared/action-helpers` (`input.string`, `input.number`, `input.boolean`). No ad-hoc
+- Validation goes through `@/shared/action-helpers` (`input.string`, `input.number`, `input.boolean`). No ad-hoc
   `typeof inputs.x !== 'string'` checks.
 - Action contract types (`ActionContext`, `ActionInput`, `ActionOutput`) come from `zorb/action` directly — that's the
   source of truth for the runner protocol.

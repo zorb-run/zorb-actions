@@ -13,9 +13,9 @@
 // - Anything the workspace declares in `dependencies` or `peerDependencies`
 //   stays external. Those resolve from the consumer's node_modules at
 //   runtime (third-party SDKs, `zorb` if peer-listed, etc.).
-// - `@shared/*` imports — resolved via tsconfig `paths` to ./shared/<name>/src
+// - `@/shared/*` imports — resolved via tsconfig `paths` to ./shared/<name>
 //   — are bundled in. The published package then has no runtime dependency
-//   on the helpers, so consumers don't pull a separate @shared/* package.
+//   on the helpers, so consumers don't pull a separate internal package.
 // - `zorb/action` is type-only; types erase to nothing so it doesn't appear
 //   in the output even though it isn't in `external`.
 //

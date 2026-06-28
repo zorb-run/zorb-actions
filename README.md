@@ -28,7 +28,7 @@ scripts/
   workspaces.ts       # workspace discovery
 ```
 
-`shared/*` is internal — referenced via the `@shared/*` tsconfig path alias and inlined into each action's compiled
+`shared/*` is internal — referenced via the `@/shared/*` tsconfig path alias and inlined into each action's compiled
 output, so consumers install one package per action with no transitive deps on a separate helpers package.
 
 ## Quick start
@@ -52,6 +52,4 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full development guide and acti
 
 ## Status
 
-Early development. Roadmap lives in [`../PLAN.md`](../PLAN.md). The B-track builds the published action collection; this
-repo is set up by [B1](../PLAN.md#b1--action-package-scaffold) and each subsequent milestone adds one package
-(`@zorb/secrets`, `@zorb/env`, `@zorb/aws`, …).
+Early development. Initial scaffold landed; published packages (`@zorb/secrets`, `@zorb/env`, `@zorb/aws`, …) follow.

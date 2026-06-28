@@ -35,7 +35,7 @@ bun install
 
 `actions/<name>/` is each published `@zorb/<name>` package — one workspace per. `shared/<name>/` is **internal-only**
 source the build bundles into each action's `dist/` (so consumers don't pull a transitive dep graph). The path alias
-`@shared/*: ./shared/*/src` lives in `tsconfig.base.json`; that's how action source code refers to the helpers.
+`@/shared/*: ./shared/*/src` lives in `tsconfig.base.json`; that's how action source code refers to the helpers.
 `templates/action/` is the canonical shape for a new action package, copied by `bun run new-package`.
 
 ## Adding a new action package
@@ -67,7 +67,7 @@ Every action exports a named `action` function with this signature:
 
 ```ts
 import type { ActionContext } from 'zorb/action';
-import { input, type ActionInputs } from '@shared/action-helpers';
+import { input, type ActionInputs } from '@/shared/action-helpers';
 
 export interface Outputs {
   message: string;
@@ -83,7 +83,7 @@ export async function action(rawInputs: ActionInputs, context: ActionContext): P
 
 - Action contract types (`ActionContext`, `ActionInput`, `ActionOutput`) come from `zorb/action` — that's the canonical
   source for the runner protocol. The import is type-only and erases at build time.
-- Validate `rawInputs` with `@shared/action-helpers` (`input.string`, `input.number`, `input.boolean`). Don't read
+- Validate `rawInputs` with `@/shared/action-helpers` (`input.string`, `input.number`, `input.boolean`). Don't read
   `inputs.x` directly — the helpers give consistent error messages and coercion.
 - `context.log.{info,warn,error,debug}` writes to the runner's stderr (debug only when zorb runs with `--debug`).
 - Return value becomes `steps.<id>.outputs.*` in the calling workflow. Return `void` if there are no outputs.
@@ -96,7 +96,7 @@ Tests live alongside their source as `<name>.spec.ts`. Import the `action` funct
 
 ```ts
 import { describe, expect, test } from 'bun:test';
-import { mockContext } from '@shared/action-helpers/testing';
+import { mockContext } from '@/shared/action-helpers/testing';
 import { action } from './notify';
 
 describe('notify', () => {
