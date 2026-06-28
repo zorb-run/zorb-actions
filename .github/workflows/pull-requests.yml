@@ -39,9 +39,11 @@ jobs:
       # stay healthy end-to-end. The CI script removes the scaffold afterwards
       # so it never touches the repo state developers see.
       - run: bun scripts/new-package.ts ci-smoke --description "CI smoke scaffold"
-      # Re-link workspaces so the scaffolded package can resolve its workspace
-      # deps (@zorb/action-helpers) and peer types (zorb).
-      - run: bun install
+      # Re-link workspaces from a clean slate. A plain `bun install` after the
+      # scaffold saves the lockfile but reports "no changes" and skips
+      # creating the per-workspace symlinks on Linux — wiping node_modules
+      # forces the linker to rebuild the tree from scratch.
+      - run: rm -rf node_modules && bun install
       - run: bun run typecheck
       - run: bun run test
       - run: bun scripts/build.ts --only=@zorb/ci-smoke
