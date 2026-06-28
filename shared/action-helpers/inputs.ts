@@ -138,7 +138,11 @@ function optionalString(
 ): string | undefined {
   const raw = pick(inputs, key);
   if (raw === undefined) return undefined;
-  return asString(key, raw, opts);
+  const coerced = asString(key, raw, opts);
+  // Empty / whitespace-only is functionally equivalent to "not provided" — callers
+  // expect `region: ''` or `profile: '   '` to be treated as absent, not as a real
+  // value that ends up baked into SDK config / validation checks.
+  return coerced.trim() === '' ? undefined : coerced;
 }
 
 function optionalNumber(
