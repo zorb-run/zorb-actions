@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
-import { ActionInputError } from '@zorb/action-helpers';
-import { mockContext } from '@zorb/action-helpers/testing';
-import { action } from '../src/hello.ts';
+import { ActionInputError } from '@shared/action-helpers';
+import { mockContext } from '@shared/action-helpers/testing';
+import { action } from '../src/hello';
 
 describe('hello', () => {
   test('greets with the default salutation', async () => {

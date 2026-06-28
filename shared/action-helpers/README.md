@@ -1,12 +1,16 @@
-# @zorb/action-helpers
+# @shared/action-helpers
 
-Shared helpers for authoring [zorb](https://github.com/zorb-run/zorb-cli) actions: input validation, types for the
-`context` object, and test fakes.
+Internal helpers for authoring [zorb](https://github.com/zorb-run/zorb-cli) actions: input validation, type re-exports
+from `zorb/action`, and test fakes.
+
+**Internal only.** Action packages reference this via the `@shared/action-helpers` tsconfig path alias; at build time
+the helpers source is bundled into each `@zorb/<name>` package's `dist/`, so consumers don't see it as a runtime
+dependency.
 
 ## Input validation
 
 ```ts
-import { input } from '@zorb/action-helpers';
+import { input } from '@shared/action-helpers';
 
 export async function action(rawInputs: Record<string, unknown>, context) {
   const bucket = input.string(rawInputs, 'bucket');
@@ -29,17 +33,17 @@ Validation failures throw `ActionInputError`. The runner catches it and fails th
 ## Types
 
 ```ts
-import type { ActionContext, ActionFn, ActionInputs } from '@zorb/action-helpers';
+import type { ActionContext, ActionInput, ActionInputs, ActionOutput } from '@shared/action-helpers';
 ```
 
-- `ActionContext` — shape of the second argument the runner passes to your action.
-- `ActionInputs` — alias for `Record<string, unknown>`; what workflow `with:` values look like before validation.
-- `ActionFn<I, O>` — typed action function signature, mostly useful for higher-order helpers.
+`ActionContext`, `ActionInput`, and `ActionOutput` are re-exported from `zorb/action` — the canonical source for the
+runner protocol. `ActionInputs` is a local convenience alias for `Record<string, unknown>`: the JSON shape the runner
+delivers as the action's first argument.
 
 ## Test fakes
 
 ```ts
-import { mockContext } from '@zorb/action-helpers/testing';
+import { mockContext } from '@shared/action-helpers/testing';
 
 const ctx = mockContext({ taskName: 'deploy' });
 await action({ name: 'world' }, ctx);

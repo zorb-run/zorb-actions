@@ -36,21 +36,10 @@ jobs:
           bun-version: 1.3.13
       - run: bun install --frozen-lockfile
       # Scaffold a throwaway package to verify the template + new-package script
-      # stay healthy end-to-end. The CI script removes the scaffold afterwards
-      # so it never touches the repo state developers see.
+      # stay healthy end-to-end. With @shared/* path aliases the scaffolded
+      # workspace has no cross-package deps to link, so we don't need to
+      # reinstall — tsc and Bun.build resolve the helpers directly from source.
       - run: bun scripts/new-package.ts ci-smoke --description "CI smoke scaffold"
-      - run: rm -rf node_modules && bun install
-      - name: Inspect node_modules layout
-        run: |
-          echo "--- root @zorb ---"
-          ls -la node_modules/@zorb/ 2>&1 || echo "missing"
-          echo "--- ci-smoke node_modules ---"
-          ls -la actions/ci-smoke/node_modules/ 2>&1 || echo "missing"
-          echo "--- ci-smoke @zorb ---"
-          ls -la actions/ci-smoke/node_modules/@zorb/ 2>&1 || echo "missing"
-          echo "--- bun version + linker ---"
-          bun --version
-          bun pm ls 2>&1 | head -30
       - run: bun run typecheck
       - run: bun run test
       - run: bun scripts/build.ts --only=@zorb/ci-smoke

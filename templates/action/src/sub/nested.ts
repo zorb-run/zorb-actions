@@ -1,5 +1,5 @@
 import type { ActionContext } from 'zorb/action';
-import { input, type ActionInputs } from '@zorb/action-helpers';
+import { input, type ActionInputs } from '@shared/action-helpers';
 
 /**
  * Demonstrates a nested action path. Authored as `src/sub/nested.ts`, compiled

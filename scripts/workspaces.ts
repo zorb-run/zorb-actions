@@ -13,27 +13,26 @@ export interface Workspace {
 const ROOT = resolvePath(import.meta.dir, '..');
 
 /**
- * Discover every workspace in the monorepo. Mirrors the `workspaces` array in
- * the root package.json — extend here if the layout changes.
+ * Discover every action workspace in the monorepo. `shared/*` is internal —
+ * its source gets bundled into each action's dist at build time — so it
+ * isn't a build target and we don't return it here.
  *
- * Skips directories that don't contain a package.json so a stray `.gitkeep` or
- * an in-progress scaffold doesn't crash the build.
+ * Skips directories that don't contain a package.json so a stray `.gitkeep`
+ * or an in-progress scaffold doesn't crash the build.
  */
 export function listWorkspaces(): Workspace[] {
   const out: Workspace[] = [];
-  for (const parent of ['actions', 'packages']) {
-    const parentDir = join(ROOT, parent);
-    if (!safeIsDir(parentDir)) continue;
-    for (const entry of readdirSync(parentDir)) {
-      if (entry.startsWith('.') || entry.startsWith('_')) continue;
-      const dir = join(parentDir, entry);
-      if (!safeIsDir(dir)) continue;
-      const pkgPath = join(dir, 'package.json');
-      if (!safeIsFile(pkgPath)) continue;
-      const pkg = readJson(pkgPath);
-      const name = typeof pkg.name === 'string' ? pkg.name : entry;
-      out.push({ dir, name, pkg });
-    }
+  const parentDir = join(ROOT, 'actions');
+  if (!safeIsDir(parentDir)) return out;
+  for (const entry of readdirSync(parentDir)) {
+    if (entry.startsWith('.') || entry.startsWith('_')) continue;
+    const dir = join(parentDir, entry);
+    if (!safeIsDir(dir)) continue;
+    const pkgPath = join(dir, 'package.json');
+    if (!safeIsFile(pkgPath)) continue;
+    const pkg = readJson(pkgPath);
+    const name = typeof pkg.name === 'string' ? pkg.name : entry;
+    out.push({ dir, name, pkg });
   }
   return out;
 }

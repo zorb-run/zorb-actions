@@ -12,12 +12,6 @@
     "dist",
     "src"
   ],
-  "dependencies": {
-    "@zorb/action-helpers": "workspace:*"
-  },
-  "devDependencies": {
-    "zorb": "^0.1.2"
-  },
   "publishConfig": {
     "access": "public"
   }

@@ -25,16 +25,23 @@ bun install
 
 | Command                      | What it does                                               |
 | ---------------------------- | ---------------------------------------------------------- |
-| `bun run typecheck`          | Type-check every workspace with `tsc --noEmit`             |
-| `bun run test`               | Run `bun test` across workspaces                           |
-| `bun run build`              | Compile every workspace's `src/` → `dist/`                 |
+| `bun run typecheck`          | Type-check actions/, shared/, scripts/ with `tsc --noEmit` |
+| `bun run test`               | Run `bun test shared actions`                              |
+| `bun run build`              | Compile every action workspace's `src/` → `dist/`          |
 | `bun run new-package <name>` | Scaffold a new `actions/<name>/` package from the template |
 | `bun run format`             | Format with Prettier                                       |
+
+## Repo layout in one paragraph
+
+`actions/<name>/` is each published `@zorb/<name>` package — one workspace per. `shared/<name>/` is **internal-only**
+source the build bundles into each action's `dist/` (so consumers don't pull a transitive dep graph). The path alias
+`@shared/*: ./shared/*/src` lives in `tsconfig.base.json`; that's how action source code refers to the helpers.
+`templates/action/` is the canonical shape for a new action package, copied by `bun run new-package`.
 
 ## Adding a new action package
 
 ```sh
-bun run new-package slack
+bun run new-package slack --description "Slack notifier actions"
 ```
 
 This copies `templates/action/` to `actions/slack/`, rewrites the package name to `@zorb/slack`, and leaves you with a
@@ -44,8 +51,7 @@ Per-package layout:
 
 ```
 actions/<name>/
-  package.json          # "name": "@zorb/<name>", wildcard exports, build script
-  tsconfig.json         # extends ../../tsconfig.base.json
+  package.json          # "name": "@zorb/<name>", wildcard exports → dist/*.js
   README.md             # short description + action reference
   src/
     <action>.ts         # one file per action — each exports an `action` function
@@ -61,14 +67,14 @@ Subpath resolution: an action at `src/s3/sync.ts` compiles to `dist/s3/sync.js` 
 Every action exports a named `action` function with this signature:
 
 ```ts
-import type { ActionContext } from '@zorb/action-helpers';
-import { input } from '@zorb/action-helpers';
+import type { ActionContext } from 'zorb/action';
+import { input, type ActionInputs } from '@shared/action-helpers';
 
 export interface Outputs {
   message: string;
 }
 
-export async function action(rawInputs: Record<string, unknown>, context: ActionContext): Promise<Outputs> {
+export async function action(rawInputs: ActionInputs, context: ActionContext): Promise<Outputs> {
   const name = input.string(rawInputs, 'name');
   const greeting = input.string(rawInputs, 'greeting', { default: 'Hello' });
   context.log.info(`${greeting}, ${name}!`);
@@ -76,7 +82,9 @@ export async function action(rawInputs: Record<string, unknown>, context: Action
 }
 ```
 
-- Validate `rawInputs` with `@zorb/action-helpers` (`input.string`, `input.number`, `input.boolean`). Don't read
+- Action contract types (`ActionContext`, `ActionInput`, `ActionOutput`) come from `zorb/action` — that's the canonical
+  source for the runner protocol. The import is type-only and erases at build time.
+- Validate `rawInputs` with `@shared/action-helpers` (`input.string`, `input.number`, `input.boolean`). Don't read
   `inputs.x` directly — the helpers give consistent error messages and coercion.
 - `context.log.{info,warn,error,debug}` writes to the runner's stderr (debug only when zorb runs with `--debug`).
 - Return value becomes `steps.<id>.outputs.*` in the calling workflow. Return `void` if there are no outputs.
@@ -89,15 +97,15 @@ Tests live alongside source in `test/`. Import the `action` function directly an
 
 ```ts
 import { describe, expect, test } from 'bun:test';
-import { mockContext } from '@zorb/action-helpers/testing';
-import { action } from '../src/notify.ts';
+import { mockContext } from '@shared/action-helpers/testing';
+import { action } from '../src/notify';
 
 describe('notify', () => {
   test('emits a greeting', async () => {
     const ctx = mockContext();
     const result = await action({ name: 'world' }, ctx);
     expect(result.message).toBe('Hello, world!');
-    expect(ctx.log.info).toHaveBeenCalledWith('Hello, world!');
+    expect(ctx.messages.info).toEqual(['Hello, world!']);
   });
 });
 ```

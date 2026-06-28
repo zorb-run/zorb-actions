@@ -16,15 +16,19 @@ compiled to JS that zorb's runner loads at workflow execution time. Subpaths map
 
 ```
 actions/              # one workspace per published @zorb/<name> package
-packages/
-  action-helpers/     # @zorb/action-helpers — input validation + shared types + test fakes
+shared/
+  action-helpers/     # internal: validators, types, test fakes
+                      # bundled into each action's dist at build time
 templates/
   action/             # scaffolding template; copied by `bun run new-package`
 scripts/
-  build.ts            # compile every workspace's src/ → dist/ (preserves nested paths)
+  build.ts            # compile every action workspace's src/ → dist/
   new-package.ts      # scaffold a new actions/<name>/ from templates/action/
   workspaces.ts       # workspace discovery
 ```
+
+`shared/*` is internal — referenced via the `@shared/*` tsconfig path alias and inlined into each action's compiled
+output, so consumers install one package per action with no transitive deps on a separate helpers package.
 
 ## Quick start
 
@@ -40,7 +44,7 @@ Scaffold a new action package:
 ```sh
 bun run new-package slack --description "Slack notifier actions"
 # → actions/slack/ (publishes as @zorb/slack)
-bun install                # link the new workspace
+bun install                # discover the new workspace
 ```
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full development guide and action-authoring conventions.

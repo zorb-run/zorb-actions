@@ -1,29 +1,33 @@
 #!/usr/bin/env bun
-// Build every workspace package's TS sources into dist/.
+// Build every action workspace's TS sources into dist/.
 //
 // For each workspace:
 //   src/foo.ts      → dist/foo.js
 //   src/sub/bar.ts  → dist/sub/bar.js
 //
-// We preserve the src/ tree under dist/ so that an action authored at
+// We preserve the src/ tree under dist/ so an action authored at
 // src/s3/sync.ts is published as `@zorb/aws/s3/sync` — the package.json's
-// "./*": "./dist/*.js" exports map relies on that one-to-one layout.
+// "./*": "./dist/*.js" exports map relies on the one-to-one layout.
 //
-// Two phases per package:
-//   1. Bun.build emits the runtime .js (workspace + external deps stay
-//      external — they're resolved by the consumer's node_modules).
-//   2. tsc --declaration --emitDeclarationOnly emits matching .d.ts files
-//      from the same sources.
+// External vs bundled:
+// - Anything the workspace declares in `dependencies` or `peerDependencies`
+//   stays external. Those resolve from the consumer's node_modules at
+//   runtime (third-party SDKs, `zorb` if peer-listed, etc.).
+// - `@shared/*` imports — resolved via tsconfig `paths` to ./shared/<name>/src
+//   — are bundled in. The published package then has no runtime dependency
+//   on the helpers, so consumers don't pull a separate @shared/* package.
+// - `zorb/action` is type-only; types erase to nothing so it doesn't appear
+//   in the output even though it isn't in `external`.
 //
 // Usage:
-//   bun scripts/build.ts                 # build every workspace
-//   bun scripts/build.ts --only=@zorb/action-helpers
-//   bun scripts/build.ts --clean         # remove dist/ before rebuilding
+//   bun scripts/build.ts                  # build every workspace
+//   bun scripts/build.ts --only=@zorb/aws # build one
+//   bun scripts/build.ts --clean          # remove dist/ before rebuilding
 
 import { existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import minimist from 'minimist';
-import { listWorkspaces, repoRoot, type Workspace } from './workspaces.ts';
+import { listWorkspaces, repoRoot, type Workspace } from './workspaces';
 
 interface BuildOptions {
   clean: boolean;
@@ -76,16 +80,14 @@ async function buildWorkspace(ws: Workspace, opts: BuildOptions): Promise<void> 
 
   process.stderr.write(`> ${ws.name}: building ${entrypoints.length} file(s) → ${relative(repoRoot(), distDir)}\n`);
 
+  const external = declaredDeps(ws);
   const result = await Bun.build({
     entrypoints,
     outdir: distDir,
     root: srcDir,
     target: 'node',
     format: 'esm',
-    // Leave every bare import unresolved. The consumer's node_modules
-    // supplies @zorb/action-helpers, third-party SDKs, etc. — bundling them
-    // here would duplicate code and break workspace linking.
-    packages: 'external',
+    external,
     minify: false,
     sourcemap: 'external',
   });
@@ -94,8 +96,15 @@ async function buildWorkspace(ws: Workspace, opts: BuildOptions): Promise<void> 
     for (const log of result.logs) process.stderr.write(`${log}\n`);
     throw new Error(`bun build failed for ${ws.name}`);
   }
+}
 
-  await emitDeclarations(ws, srcDir, distDir);
+function declaredDeps(ws: Workspace): string[] {
+  const deps = ws.pkg.dependencies as Record<string, string> | undefined;
+  const peer = ws.pkg.peerDependencies as Record<string, string> | undefined;
+  const out = new Set<string>();
+  if (deps) for (const k of Object.keys(deps)) out.add(k);
+  if (peer) for (const k of Object.keys(peer)) out.add(k);
+  return [...out];
 }
 
 function collectEntrypoints(srcDir: string): string[] {
@@ -114,43 +123,6 @@ function walk(dir: string, visit: (file: string) => void): void {
     const st = statSync(full);
     if (st.isDirectory()) walk(full, visit);
     else if (st.isFile()) visit(full);
-  }
-}
-
-async function emitDeclarations(ws: Workspace, srcDir: string, distDir: string): Promise<void> {
-  // tsc is run as a child process; the workspace's tsconfig.json controls
-  // the compiler options, we just override emit settings on the CLI.
-  const tsconfigPath = join(ws.dir, 'tsconfig.json');
-  if (!existsSync(tsconfigPath)) {
-    process.stderr.write(`> ${ws.name}: no tsconfig.json — skipping .d.ts emit\n`);
-    return;
-  }
-
-  // Run tsc against the workspace's tsconfig with declaration-only overrides.
-  // The workspace tsconfig extends our base (declaration: true) and includes
-  // both src/ and test/, so we re-include only src/ here to keep dist/ clean.
-  const args = [
-    '--project',
-    tsconfigPath,
-    '--declaration',
-    '--emitDeclarationOnly',
-    '--rootDir',
-    srcDir,
-    '--outDir',
-    distDir,
-  ];
-
-  const proc = Bun.spawn(['bunx', 'tsc', ...args], {
-    cwd: ws.dir,
-    stdout: 'pipe',
-    stderr: 'pipe',
-  });
-  const [stdout, stderr] = await Promise.all([new Response(proc.stdout).text(), new Response(proc.stderr).text()]);
-  const exitCode = await proc.exited;
-  if (exitCode !== 0) {
-    process.stderr.write(stdout);
-    process.stderr.write(stderr);
-    throw new Error(`tsc declaration emit failed for ${ws.name}`);
   }
 }
 

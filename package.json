@@ -5,13 +5,12 @@
   "license": "MIT",
   "type": "module",
   "workspaces": [
-    "actions/*",
-    "packages/*"
+    "actions/*"
   ],
   "scripts": {
     "build": "bun scripts/build.ts",
     "new-package": "bun scripts/new-package.ts",
-    "test": "bun test packages actions",
+    "test": "bun test shared actions",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "format": "prettier --write ."
   },
