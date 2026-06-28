@@ -4,7 +4,7 @@ AWS service actions for [zorb](https://github.com/zorb-run/zorb-cli) workflows. 
 resolve via the default provider chain, so anything `aws sts get-caller-identity` works against from your shell will
 work here too.
 
-> Status: first cut. Ships `s3/sync` and `ecr/push`. Lambda, SSM, and friends ship in follow-up releases.
+> Status: first cut. Ships `s3/sync`, `ecr/push`, and `lambda/invoke`. SSM and friends ship in follow-up releases.
 
 ## Actions
 
@@ -95,6 +95,44 @@ The action shells out to `docker` for `login`/`tag`/`push`, so a working Docker 
 `ecr:GetAuthorizationToken` over the default credential chain — there's no need to run `aws ecr get-login-password`
 beforehand.
 
+### `@zorb/aws/lambda/invoke`
+
+Invoke a Lambda function and capture its response. Payload is sent as JSON; objects are stringified automatically,
+strings are forwarded verbatim. The response body is JSON-parsed when possible and surfaced as `outputs.response`.
+
+```yml
+steps:
+  - id: hello
+    uses: '@zorb/aws/lambda/invoke'
+    with:
+      functionName: hello-world
+      qualifier: prod
+      payload:
+        name: zorb
+      logType: Tail
+```
+
+| input            | type    | required | default           | description                                                                                 |
+| ---------------- | ------- | -------- | ----------------- | ------------------------------------------------------------------------------------------- |
+| `functionName`   | string  | yes      | —                 | Lambda function name or ARN                                                                 |
+| `payload`        | any     | no       | —                 | JSON-serialisable value (object/array/scalar) or a pre-serialised string                    |
+| `invocationType` | string  | no       | `RequestResponse` | one of `RequestResponse`, `Event`, `DryRun`                                                 |
+| `qualifier`      | string  | no       | —                 | function version (`$LATEST`, `42`) or alias name                                            |
+| `region`         | string  | no       | SDK default chain | explicit AWS region                                                                         |
+| `logType`        | string  | no       | `None`            | `Tail` returns the last 4 KB of function logs and forwards each line to the step's info log |
+| `failOnError`    | boolean | no       | `true`            | when Lambda returns a `FunctionError`, fail the step instead of returning it as an output   |
+
+| output            | type                          | description                                                                    |
+| ----------------- | ----------------------------- | ------------------------------------------------------------------------------ |
+| `statusCode`      | number                        | HTTP status code returned by Lambda (200 sync, 202 async, 204 DryRun)          |
+| `response`        | object \| string \| undefined | parsed JSON body if possible, raw string otherwise, undefined for empty bodies |
+| `functionError`   | string?                       | `Handled` or `Unhandled` if Lambda reported an error                           |
+| `logs`            | string?                       | decoded log tail when `logType: Tail`                                          |
+| `executedVersion` | string?                       | the function version that actually ran                                         |
+
+`Event` invocations return immediately with `statusCode: 202` and an empty body, so `response` is undefined for that
+flow.
+
 ## Credentials & permissions
 
 Both actions use the AWS SDK v3 default credential provider chain — environment variables, shared config files,
@@ -106,3 +144,5 @@ container/EC2 instance metadata, etc. To scope IAM:
   `ecr:InitiateLayerUpload`, `ecr:PutImage`, `ecr:UploadLayerPart`, and (when `createRepository: true`)
   `ecr:DescribeRepositories` + `ecr:CreateRepository`. It also calls `sts:GetCallerIdentity` unless `accountId` is set
   explicitly.
+- `lambda/invoke` needs `lambda:InvokeFunction` on the target function (or `*` for cross-version invocation when a
+  `qualifier` is set).
