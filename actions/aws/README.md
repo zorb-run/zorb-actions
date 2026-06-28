@@ -1,12 +1,91 @@
 # @zorb/aws
 
-AWS service actions for [zorb](https://github.com/zorb-run/zorb-cli) workflows. Built on the AWS SDK v3 — credentials
-resolve via the default provider chain, so anything `aws sts get-caller-identity` works against from your shell will
-work here too.
+AWS service actions for [zorb](https://github.com/zorb-run/zorb-cli) workflows. Built on the AWS SDK v3.
 
-> Status: first cut. Ships `s3/sync`, `ecr/push`, and `lambda/invoke`. SSM and friends ship in follow-up releases.
+> Status: first cut. Ships `credentials/configure`, `s3/sync`, `ecr/push`, and `lambda/invoke`. SSM and friends ship in
+> follow-up releases.
+
+## Authentication
+
+zorb does not pass the calling shell's environment into actions implicitly, so the AWS SDK's default credential provider
+chain only sees what zorb has been told about explicitly. The recommended pattern is to run
+`@zorb/aws/credentials/configure` up front — it resolves credentials, verifies them via `sts:GetCallerIdentity`, and
+publishes them as both env vars (for subsequent SDK clients and `aws` CLI invocations) and as masked secrets (so they
+never leak into step output).
+
+```yml
+secrets:
+  - uses: '@zorb/aws/credentials/configure'
+    with:
+      profile: deploy
+      region: us-east-1
+
+tasks:
+  release:
+    steps:
+      - uses: '@zorb/aws/s3/sync'
+        with:
+          source: ./dist
+          destination: s3://my-site
+```
+
+See [`@zorb/aws/credentials/configure`](#zorbawscredentialsconfigure) for the three supported modes (default chain,
+named profile, role assumption).
 
 ## Actions
+
+### `@zorb/aws/credentials/configure`
+
+Resolve a set of AWS credentials and publish them to subsequent steps. Three modes, selected by which inputs are
+present:
+
+| mode             | inputs                                           | what happens                                                                                 |
+| ---------------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| 1. default chain | (no auth inputs; `region` optional)              | SDK default chain (env, `~/.aws/*`, SSO cache, IMDS), then `sts:GetCallerIdentity` to verify |
+| 2. named profile | `profile` (`region` optional)                    | `fromIni({ profile })`, then verify                                                          |
+| 3. assume role   | `roleArn` + `sessionName` (+ optional `profile`) | `sts:AssumeRole` (sourced from the profile if supplied, otherwise the default chain)         |
+
+```yml
+# Mode 1 — pick whatever the default chain finds
+- uses: '@zorb/aws/credentials/configure'
+  with:
+    region: us-east-1
+
+# Mode 2 — use a named profile from ~/.aws/credentials
+- uses: '@zorb/aws/credentials/configure'
+  with:
+    profile: deploy
+    region: us-east-1
+
+# Mode 3 — assume a role
+- uses: '@zorb/aws/credentials/configure'
+  with:
+    roleArn: arn:aws:iam::123456789012:role/Deploy
+    sessionName: zorb-deploy
+    region: us-east-1
+    durationSeconds: 1800
+```
+
+| input             | type   | required              | default           | description                                                                  |
+| ----------------- | ------ | --------------------- | ----------------- | ---------------------------------------------------------------------------- |
+| `region`          | string | no                    | —                 | AWS region — set as `AWS_REGION`/`AWS_DEFAULT_REGION` and used for STS calls |
+| `profile`         | string | no                    | —                 | named profile from `~/.aws/credentials` / `~/.aws/config`                    |
+| `roleArn`         | string | no                    | —                 | role to assume; requires `sessionName`                                       |
+| `sessionName`     | string | when `roleArn` is set | —                 | session name passed to `sts:AssumeRole`                                      |
+| `durationSeconds` | number | no (role mode only)   | SDK default (1 h) | session lifetime in seconds                                                  |
+| `externalId`      | string | no (role mode only)   | —                 | external ID for cross-account trust                                          |
+
+| output      | type   | description                                         |
+| ----------- | ------ | --------------------------------------------------- |
+| `accountId` | string | account from `sts:GetCallerIdentity`                |
+| `arn`       | string | caller ARN (assumed-role ARN in mode 3)             |
+| `userId`    | string | unique principal ID                                 |
+| `region`    | string | the `region` input as supplied (undefined if unset) |
+
+**Side effects.** On success the action calls `context.setEnv` for `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
+`AWS_SESSION_TOKEN` (when present), and `AWS_REGION` / `AWS_DEFAULT_REGION` (when `region` is set). The same key /
+secret / session-token triplet is also registered via `context.setSecret` so the values are masked anywhere they appear
+in step stdout/stderr.
 
 ### `@zorb/aws/s3/sync`
 
@@ -133,11 +212,12 @@ steps:
 `Event` invocations return immediately with `statusCode: 202` and an empty body, so `response` is undefined for that
 flow.
 
-## Credentials & permissions
+## IAM permissions
 
-Both actions use the AWS SDK v3 default credential provider chain — environment variables, shared config files,
-container/EC2 instance metadata, etc. To scope IAM:
+In addition to the obvious per-action scopes:
 
+- `credentials/configure` needs `sts:GetCallerIdentity` always, plus `sts:AssumeRole` on the target role when used in
+  role-assumption mode.
 - `s3/sync` needs `s3:ListBucket`, `s3:GetObject`, `s3:PutObject`, and (when `delete: true`) `s3:DeleteObject` on the
   involved bucket(s).
 - `ecr/push` needs `ecr:GetAuthorizationToken`, `ecr:BatchCheckLayerAvailability`, `ecr:CompleteLayerUpload`,
