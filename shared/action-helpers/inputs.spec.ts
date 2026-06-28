@@ -115,6 +115,12 @@ describe('input.optional', () => {
     expect(input.optional.strings({ keys: 'one' }, 'keys')).toEqual(['one']);
     expect(input.optional.strings({ keys: ['a', 'b'] }, 'keys')).toEqual(['a', 'b']);
   });
+
+  test('treats empty / whitespace-only strings as absent', () => {
+    expect(input.optional.string({ name: '' }, 'name')).toBeUndefined();
+    expect(input.optional.string({ name: '   ' }, 'name')).toBeUndefined();
+    expect(input.optional.string({ name: '\t\n' }, 'name')).toBeUndefined();
+  });
 });
 
 describe('display name override', () => {
