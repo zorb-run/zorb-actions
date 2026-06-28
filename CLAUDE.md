@@ -38,16 +38,16 @@ configured in `tsconfig.base.json`:
 
 ```jsonc
 "paths": {
-  "@shared/action-helpers": ["./shared/action-helpers/index.ts"],
-  "@shared/action-helpers/*": ["./shared/action-helpers/*"]
+  "@shared/*": ["./shared/*"]
 }
 ```
 
-So `import { input } from '@shared/action-helpers'` resolves to `./shared/action-helpers/index.ts` at compile time. At
-build time `scripts/build.ts` bundles that source into each action's `dist/`, so the published `@zorb/<name>` package
-has zero runtime dependency on the helpers. Consumers install one package per action, not a dep graph.
+So `import { input } from '@shared/action-helpers'` resolves to `./shared/action-helpers/index.ts` at compile time, and
+`@shared/action-helpers/testing` resolves to `./shared/action-helpers/testing.ts`. Future shared modules
+(`@shared/utils`, `@shared/types`, …) plug in under the same wildcard with no tsconfig edit.
 
-Add two lines per shared package as the layer grows — one for the bare import, one for sub-paths.
+At build time `scripts/build.ts` bundles the resolved source into each action's `dist/`, so the published `@zorb/<name>`
+package has zero runtime dependency on the helpers. Consumers install one package per action, not a dep graph.
 
 `templates/action/` is also outside `actions/*` so its placeholder `@zorb/__name__` package name doesn't trip up
 `bun install`. Treat it as scaffolding-only — don't import from it, don't add it to the workspaces array.
