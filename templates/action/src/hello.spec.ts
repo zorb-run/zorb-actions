@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'bun:test';
-import { ActionInputError } from '@shared/action-helpers';
-import { mockContext } from '@shared/action-helpers/testing';
+import { ActionInputError } from '@/shared/action-helpers';
+import { mockContext } from '@/shared/action-helpers/testing';
 import { action } from './hello';
 
 describe('hello', () => {

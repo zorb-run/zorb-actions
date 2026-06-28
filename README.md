@@ -28,7 +28,7 @@ scripts/
   workspaces.ts       # workspace discovery
 ```
 
-`shared/*` is internal — referenced via the `@shared/*` tsconfig path alias and inlined into each action's compiled
+`shared/*` is internal — referenced via the `@/shared/*` tsconfig path alias and inlined into each action's compiled
 output, so consumers install one package per action with no transitive deps on a separate helpers package.
 
 ## Quick start

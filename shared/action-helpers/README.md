@@ -1,16 +1,16 @@
-# @shared/action-helpers
+# action-helpers (internal)
 
 Internal helpers for authoring [zorb](https://github.com/zorb-run/zorb-cli) actions: input validation, type re-exports
 from `zorb/action`, and test fakes.
 
-**Internal only.** Action packages reference this via the `@shared/action-helpers` tsconfig path alias; at build time
+**Not published.** Action packages reference this via the `@/shared/action-helpers` tsconfig path alias; at build time
 the helpers source is bundled into each `@zorb/<name>` package's `dist/`, so consumers don't see it as a runtime
 dependency.
 
 ## Input validation
 
 ```ts
-import { input } from '@shared/action-helpers';
+import { input } from '@/shared/action-helpers';
 
 export async function action(rawInputs: Record<string, unknown>, context) {
   const bucket = input.string(rawInputs, 'bucket');
@@ -33,7 +33,7 @@ Validation failures throw `ActionInputError`. The runner catches it and fails th
 ## Types
 
 ```ts
-import type { ActionContext, ActionInput, ActionInputs, ActionOutput } from '@shared/action-helpers';
+import type { ActionContext, ActionInput, ActionInputs, ActionOutput } from '@/shared/action-helpers';
 ```
 
 `ActionContext`, `ActionInput`, and `ActionOutput` are re-exported from `zorb/action` — the canonical source for the
@@ -43,7 +43,7 @@ delivers as the action's first argument.
 ## Test fakes
 
 ```ts
-import { mockContext } from '@shared/action-helpers/testing';
+import { mockContext } from '@/shared/action-helpers/testing';
 
 const ctx = mockContext({ taskName: 'deploy' });
 await action({ name: 'world' }, ctx);
