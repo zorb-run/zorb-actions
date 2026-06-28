@@ -52,6 +52,27 @@ function asNumber(key: string, raw: unknown, opts: InputOptions<unknown> | undef
   throw new ActionInputError(`input '${displayName(key, opts)}': expected a number, got ${typeName(raw)}`);
 }
 
+function asStrings(key: string, raw: unknown, opts: InputOptions<unknown> | undefined): string[] {
+  // Single-string coercion mirrors common YAML ergonomics — `path: .env` and
+  // `path: [.env, .env.local]` should both work without forcing every author
+  // to wrap a scalar in brackets.
+  if (typeof raw === 'string') return [raw];
+  if (Array.isArray(raw)) {
+    const out: string[] = [];
+    for (let i = 0; i < raw.length; i++) {
+      const item = raw[i];
+      if (typeof item !== 'string') {
+        throw new ActionInputError(`input '${displayName(key, opts)}[${i}]': expected a string, got ${typeName(item)}`);
+      }
+      out.push(item);
+    }
+    return out;
+  }
+  throw new ActionInputError(
+    `input '${displayName(key, opts)}': expected a string or array of strings, got ${typeName(raw)}`,
+  );
+}
+
 function asBoolean(key: string, raw: unknown, opts: InputOptions<unknown> | undefined): boolean {
   if (typeof raw === 'boolean') return raw;
   if (typeof raw === 'string') {
@@ -101,6 +122,15 @@ function requireBoolean(inputs: ActionInputs, key: string, opts?: InputOptions<b
   return asBoolean(key, raw, opts);
 }
 
+function requireStrings(inputs: ActionInputs, key: string, opts?: InputOptions<string[]>): string[] {
+  const raw = pick(inputs, key);
+  if (raw === undefined) {
+    if (opts?.default !== undefined) return opts.default;
+    throw new ActionInputError(`missing required input '${displayName(key, opts)}'`);
+  }
+  return asStrings(key, raw, opts);
+}
+
 function optionalString(
   inputs: ActionInputs,
   key: string,
@@ -131,13 +161,25 @@ function optionalBoolean(
   return asBoolean(key, raw, opts);
 }
 
+function optionalStrings(
+  inputs: ActionInputs,
+  key: string,
+  opts?: Omit<InputOptions<string[]>, 'default'>,
+): string[] | undefined {
+  const raw = pick(inputs, key);
+  if (raw === undefined) return undefined;
+  return asStrings(key, raw, opts);
+}
+
 export const input = {
   string: requireString,
   number: requireNumber,
   boolean: requireBoolean,
+  strings: requireStrings,
   optional: {
     string: optionalString,
     number: optionalNumber,
     boolean: optionalBoolean,
+    strings: optionalStrings,
   },
 };
