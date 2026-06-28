@@ -1,0 +1,18 @@
+{
+  "name": "@zorb/__name__",
+  "description": "TODO: short description of what this package does",
+  "version": "0.0.0",
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    "./*": "./dist/*.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "@shared/action-helpers",
+  "description": "Internal: shared helpers bundled into @zorb/* action packages at build time. Not published.",
+  "private": true,
+  "type": "module"
+}
