@@ -16,6 +16,7 @@ compiled to JS that zorb's runner loads at workflow execution time. Subpaths map
 
 ```
 actions/              # one workspace per published @zorb/<name> package
+                      # src/<name>.ts + src/<name>.spec.ts (unit tests next to source)
 shared/
   action-helpers/     # internal: validators, types, test fakes
                       # bundled into each action's dist at build time

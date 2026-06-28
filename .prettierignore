@@ -1,3 +1,8 @@
 node_modules/
 **/dist/
 bun.lock
+
+# The template is a literal-copy artifact — prettier rewrites things like
+# `__name__` (the scaffolder's placeholder) into markdown bold syntax, which
+# then breaks substitution. Leave it alone.
+templates/

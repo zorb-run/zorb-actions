@@ -55,8 +55,7 @@ actions/<name>/
   README.md             # short description + action reference
   src/
     <action>.ts         # one file per action — each exports an `action` function
-  test/
-    <action>.test.ts    # bun test, calls action() directly with a mock context
+    <action>.spec.ts    # bun unit test, sits next to the source it covers
 ```
 
 Subpath resolution: an action at `src/s3/sync.ts` compiles to `dist/s3/sync.js` and is referenced from a workflow as
@@ -93,12 +92,12 @@ export async function action(rawInputs: ActionInputs, context: ActionContext): P
 
 ## Testing actions
 
-Tests live alongside source in `test/`. Import the `action` function directly and pass a fake context:
+Tests live alongside their source as `<name>.spec.ts`. Import the `action` function directly and pass a fake context:
 
 ```ts
 import { describe, expect, test } from 'bun:test';
 import { mockContext } from '@shared/action-helpers/testing';
-import { action } from '../src/notify';
+import { action } from './notify';
 
 describe('notify', () => {
   test('emits a greeting', async () => {

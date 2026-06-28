@@ -17,13 +17,12 @@ published action collection.
 actions/
   <name>/               # one workspace per published package; publishes as @zorb/<name>
     package.json        # name: "@zorb/<name>", wildcard "exports" → dist/*.js
-    src/                # TS sources; each file is a separate action entry
-    test/               # bun test files
+    src/                # TS sources + colocated *.spec.ts unit tests
     README.md
 shared/
   action-helpers/       # internal: validation helpers, types, test fakes
-    src/                # bundled into each action's dist at build time
-    test/
+    *.ts                # source files at the package root (no src/ wrapper)
+    *.spec.ts           # bun unit tests alongside source
 templates/
   action/               # canonical shape for a new @zorb/* package; copied by `bun run new-package`
 scripts/
@@ -39,13 +38,16 @@ configured in `tsconfig.base.json`:
 
 ```jsonc
 "paths": {
-  "@shared/*": ["./shared/*/src"]
+  "@shared/action-helpers": ["./shared/action-helpers/index.ts"],
+  "@shared/action-helpers/*": ["./shared/action-helpers/*"]
 }
 ```
 
-So `import { input } from '@shared/action-helpers'` resolves to `./shared/action-helpers/src/index.ts` at compile time.
-At build time `scripts/build.ts` bundles that source into each action's `dist/`, so the published `@zorb/<name>` package
+So `import { input } from '@shared/action-helpers'` resolves to `./shared/action-helpers/index.ts` at compile time. At
+build time `scripts/build.ts` bundles that source into each action's `dist/`, so the published `@zorb/<name>` package
 has zero runtime dependency on the helpers. Consumers install one package per action, not a dep graph.
+
+Add two lines per shared package as the layer grows — one for the bare import, one for sub-paths.
 
 `templates/action/` is also outside `actions/*` so its placeholder `@zorb/__name__` package name doesn't trip up
 `bun install`. Treat it as scaffolding-only — don't import from it, don't add it to the workspaces array.
@@ -86,6 +88,8 @@ Always run typecheck + tests before committing.
 
 - TypeScript strict, `noUncheckedIndexedAccess`. Prefer `undefined` over `null` in types.
 - Kebab-case for filenames. Match siblings if a directory has an established style.
+- Unit tests live alongside their source as `<name>.spec.ts` (action sources go in `src/hello.ts`, tests in
+  `src/hello.spec.ts`). The build script filters `*.spec.ts` out of action entrypoints automatically.
 - Use `path.resolve` / `path.join` for filesystem paths. No string concatenation with `/`.
 - Action files should be small and pure: validate inputs at the top, do the work, return outputs.
 - Validation goes through `@shared/action-helpers` (`input.string`, `input.number`, `input.boolean`). No ad-hoc

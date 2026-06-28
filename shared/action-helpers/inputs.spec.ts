@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { ActionInputError, input } from '../src/index';
+import { ActionInputError, input } from './index';
 
 describe('input.string', () => {
   test('returns string values as-is', () => {

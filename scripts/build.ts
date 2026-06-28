@@ -110,7 +110,7 @@ function declaredDeps(ws: Workspace): string[] {
 function collectEntrypoints(srcDir: string): string[] {
   const out: string[] = [];
   walk(srcDir, (p) => {
-    if (p.endsWith('.ts') && !p.endsWith('.d.ts') && !p.endsWith('.test.ts')) {
+    if (p.endsWith('.ts') && !p.endsWith('.d.ts') && !p.endsWith('.test.ts') && !p.endsWith('.spec.ts')) {
       out.push(p);
     }
   });

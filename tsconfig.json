@@ -3,5 +3,5 @@
   "compilerOptions": {
     "allowImportingTsExtensions": true
   },
-  "include": ["actions/*/src/**/*", "actions/*/test/**/*", "shared/*/src/**/*", "shared/*/test/**/*", "scripts/**/*"]
+  "include": ["actions/*/src/**/*", "shared/**/*.ts", "scripts/**/*"]
 }

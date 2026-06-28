@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { mockContext } from '../src/testing';
+import { mockContext } from './testing';
 
 describe('mockContext', () => {
   test('captures log calls per level', () => {

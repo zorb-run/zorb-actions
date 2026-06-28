@@ -1,4 +1,4 @@
-# @zorb/**name**
+# @zorb/__name__
 
 TODO: short description of what this package does.
 

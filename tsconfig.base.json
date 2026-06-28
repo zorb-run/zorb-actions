@@ -17,8 +17,8 @@
     "declaration": true,
     "baseUrl": ".",
     "paths": {
-      "@shared/action-helpers": ["./shared/action-helpers/src/index.ts"],
-      "@shared/action-helpers/*": ["./shared/action-helpers/src/*"]
+      "@shared/action-helpers": ["./shared/action-helpers/index.ts"],
+      "@shared/action-helpers/*": ["./shared/action-helpers/*"]
     }
   }
 }

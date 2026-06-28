@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'bun:test';
 import { ActionInputError } from '@shared/action-helpers';
 import { mockContext } from '@shared/action-helpers/testing';
-import { action } from '../src/hello';
+import { action } from './hello';
 
 describe('hello', () => {
   test('greets with the default salutation', async () => {
