@@ -34,6 +34,12 @@ steps:
       value: production
 ```
 
+…or directly from the CLI:
+
+```sh
+zorb use @zorb/env/set --with name=NODE_ENV value=production
+```
+
 | Input   | Type   | Required | Description           |
 | ------- | ------ | -------- | --------------------- |
 | `name`  | string | yes      | env var name          |
@@ -51,6 +57,12 @@ steps:
       path: [.env, .env.local]
       prefix: APP_
       only: [DB_URL, PORT]
+```
+
+…or directly from the CLI (single path / single filter — use the YAML form for multiples):
+
+```sh
+zorb use @zorb/env/load-dotenv --with path=.env.local prefix=APP_
 ```
 
 | Input      | Type               | Required | Default | Description                                     |
@@ -80,6 +92,12 @@ steps:
       prefix: APP_
 ```
 
+…or directly from the CLI:
+
+```sh
+zorb use @zorb/env/load-file --with path=./config/env.yml prefix=APP_
+```
+
 | Input    | Type               | Required | Default                 | Description                                                          |
 | -------- | ------------------ | -------- | ----------------------- | -------------------------------------------------------------------- |
 | `path`   | string             | yes      | —                       | path resolved relative to the workflow's cwd                         |
@@ -107,6 +125,12 @@ steps:
       path: ~/.aws/credentials
       section: default
       prefix: AWS_
+```
+
+…or directly from the CLI:
+
+```sh
+zorb use @zorb/env/load-ini --with path=~/.aws/credentials section=default prefix=AWS_
 ```
 
 | Input     | Type               | Required | Default | Description                                              |

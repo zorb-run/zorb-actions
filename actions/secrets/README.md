@@ -30,6 +30,12 @@ secrets:
       value: super-secret
 ```
 
+…or directly from the CLI:
+
+```sh
+zorb use @zorb/secrets/set --with name=API_KEY value=super-secret
+```
+
 | Input   | Type   | Required | Description                     |
 | ------- | ------ | -------- | ------------------------------- |
 | `name`  | string | yes      | secret name                     |
@@ -47,6 +53,12 @@ secrets:
       keys: [STRIPE_KEY, DATABASE_URL]
 ```
 
+…or directly from the CLI (single key — use the YAML form for multiple):
+
+```sh
+zorb use @zorb/secrets/load-env --with keys=STRIPE_KEY
+```
+
 | Input      | Type               | Required | Default | Description                           |
 | ---------- | ------------------ | -------- | ------- | ------------------------------------- |
 | `keys`     | string \| string[] | yes      | —       | env var names to promote              |
@@ -62,6 +74,12 @@ secrets:
     with:
       path: [.env, .env.local]
       only: [API_KEY, DB_URL]
+```
+
+…or directly from the CLI (single path — use the YAML form for multiples):
+
+```sh
+zorb use @zorb/secrets/load-dotenv --with path=.env
 ```
 
 | Input      | Type               | Required | Default | Description                                     |
@@ -84,6 +102,12 @@ secrets:
   - uses: '@zorb/secrets/load-file'
     with:
       path: ./config/secrets.yml
+```
+
+…or directly from the CLI:
+
+```sh
+zorb use @zorb/secrets/load-file --with path=./config/secrets.yml
 ```
 
 | Input    | Type               | Required | Default                 | Description                                                          |

@@ -115,6 +115,12 @@ steps:
       cacheControl: public, max-age=31536000, immutable
 ```
 
+…or directly from the CLI:
+
+```sh
+zorb use @zorb/aws/s3/sync --with source=./dist destination=s3://my-site/assets delete=true
+```
+
 | Input          | Type               | Required | Default                             | Description                                              |
 | -------------- | ------------------ | -------- | ----------------------------------- | -------------------------------------------------------- |
 | `source`       | string             | yes      | —                                   | local path or `s3://bucket[/prefix]`                     |
@@ -173,6 +179,12 @@ steps:
       createRepository: true
 ```
 
+…or directly from the CLI (single tag — use the YAML form for multiple):
+
+```sh
+zorb use @zorb/aws/ecr/push --with image=myapp:dev repository=myapp tags=latest region=us-east-1
+```
+
 | Input              | Type               | Required | Default                             | Description                                                                                     |
 | ------------------ | ------------------ | -------- | ----------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `image`            | string             | yes      | —                                   | local image reference (`name:tag`, image ID, etc.)                                              |
@@ -211,6 +223,12 @@ steps:
       payload:
         name: zorb
       logType: Tail
+```
+
+…or directly from the CLI (payload is passed as a JSON string):
+
+```sh
+zorb use @zorb/aws/lambda/invoke --with functionName=hello-world payload='{"name":"zorb"}' logType=Tail
 ```
 
 | Input            | Type    | Required | Default                             | Description                                                                                 |
