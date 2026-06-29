@@ -1,7 +1,7 @@
 {
   "name": "@zorb/aws",
   "description": "AWS service actions (S3, ECR) for zorb workflows",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "MIT",
   "type": "module",
   "repository": {
