@@ -1,9 +1,18 @@
 {
   "name": "@zorb/env",
   "description": "Environment-variable loader actions for zorb workflows (set, load-dotenv, load-file, load-ini)",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zorb-run/zorb-actions.git",
+    "directory": "actions/env"
+  },
+  "homepage": "https://github.com/zorb-run/zorb-actions/tree/main/actions/env#readme",
+  "bugs": {
+    "url": "https://github.com/zorb-run/zorb-actions/issues"
+  },
   "exports": {
     "./*": "./dist/*.js",
     "./package.json": "./package.json"
@@ -17,6 +26,7 @@
     "yaml": "^2.5.0"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   }
 }

@@ -1,9 +1,18 @@
 {
   "name": "@zorb/aws",
   "description": "AWS service actions (S3, ECR) for zorb workflows",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "MIT",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zorb-run/zorb-actions.git",
+    "directory": "actions/aws"
+  },
+  "homepage": "https://github.com/zorb-run/zorb-actions/tree/main/actions/aws#readme",
+  "bugs": {
+    "url": "https://github.com/zorb-run/zorb-actions/issues"
+  },
   "exports": {
     "./*": "./dist/*.js",
     "./package.json": "./package.json"
@@ -21,6 +30,7 @@
     "@aws-sdk/lib-storage": "^3.600.0"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   }
 }
