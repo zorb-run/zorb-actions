@@ -78,18 +78,18 @@ present:
 | Input             | Type   | Required              | Default           | Description                                                                  |
 | ----------------- | ------ | --------------------- | ----------------- | ---------------------------------------------------------------------------- |
 | `region`          | string | no                    | —                 | AWS region — set as `AWS_REGION`/`AWS_DEFAULT_REGION` and used for STS calls |
-| `profile`         | string | no                    | —                 | named profile from `~/.aws/credentials` / `~/.aws/config`                    |
-| `roleArn`         | string | no                    | —                 | role to assume; requires `sessionName`                                       |
-| `sessionName`     | string | when `roleArn` is set | —                 | session name passed to `sts:AssumeRole`                                      |
-| `durationSeconds` | number | no (role mode only)   | SDK default (1 h) | session lifetime in seconds                                                  |
-| `externalId`      | string | no (role mode only)   | —                 | external ID for cross-account trust                                          |
+| `profile`         | string | no                    | —                 | Named profile from `~/.aws/credentials` / `~/.aws/config`                    |
+| `roleArn`         | string | no                    | —                 | Role to assume; requires `sessionName`                                       |
+| `sessionName`     | string | when `roleArn` is set | —                 | Session name passed to `sts:AssumeRole`                                      |
+| `durationSeconds` | number | no (role mode only)   | SDK default (1 h) | Session lifetime in seconds                                                  |
+| `externalId`      | string | no (role mode only)   | —                 | External ID for cross-account trust                                          |
 
 | Output      | Type   | Description                                         |
 | ----------- | ------ | --------------------------------------------------- |
-| `accountId` | string | account from `sts:GetCallerIdentity`                |
-| `arn`       | string | caller ARN (assumed-role ARN in mode 3)             |
-| `userId`    | string | unique principal ID                                 |
-| `region`    | string | the `region` input as supplied (undefined if unset) |
+| `accountId` | string | Account from `sts:GetCallerIdentity`                |
+| `arn`       | string | Caller ARN (assumed-role ARN in mode 3)             |
+| `userId`    | string | Unique principal ID                                 |
+| `region`    | string | The `region` input as supplied (undefined if unset) |
 
 **Side effects.** On success the action calls `context.setEnv` for `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`,
 `AWS_SESSION_TOKEN` (when present), and `AWS_REGION` / `AWS_DEFAULT_REGION` (when `region` is set). The same key /
@@ -123,22 +123,22 @@ zorb use @zorb/aws/s3/sync --with source=./dist destination=s3://my-site/assets 
 
 | Input          | Type               | Required | Default                             | Description                                              |
 | -------------- | ------------------ | -------- | ----------------------------------- | -------------------------------------------------------- |
-| `source`       | string             | yes      | —                                   | local path or `s3://bucket[/prefix]`                     |
-| `destination`  | string             | yes      | —                                   | local path or `s3://bucket[/prefix]`                     |
-| `delete`       | boolean            | no       | `false`                             | remove objects at destination missing from source        |
-| `exclude`      | string \| string[] | no       | —                                   | skip keys matching these globs                           |
-| `include`      | string \| string[] | no       | —                                   | rescue excluded keys matching these globs                |
-| `region`       | string             | no       | `AWS_REGION` / `AWS_DEFAULT_REGION` | explicit AWS region (overrides what `configure` set)     |
-| `dryRun`       | boolean            | no       | `false`                             | log intended uploads/deletes without making any S3 calls |
+| `source`       | string             | yes      | —                                   | Local path or `s3://bucket[/prefix]`                     |
+| `destination`  | string             | yes      | —                                   | Local path or `s3://bucket[/prefix]`                     |
+| `delete`       | boolean            | no       | `false`                             | Remove objects at destination missing from source        |
+| `exclude`      | string \| string[] | no       | —                                   | Skip keys matching these globs                           |
+| `include`      | string \| string[] | no       | —                                   | Rescue excluded keys matching these globs                |
+| `region`       | string             | no       | `AWS_REGION` / `AWS_DEFAULT_REGION` | Explicit AWS region (overrides what `configure` set)     |
+| `dryRun`       | boolean            | no       | `false`                             | Log intended uploads/deletes without making any S3 calls |
 | `cacheControl` | string             | no       | —                                   | `Cache-Control` header for uploaded objects              |
-| `contentType`  | string             | no       | inferred from extension             | override `Content-Type` for every uploaded object        |
+| `contentType`  | string             | no       | inferred from extension             | Override `Content-Type` for every uploaded object        |
 
 | Output       | Type   | Description                                  |
 | ------------ | ------ | -------------------------------------------- |
-| `uploaded`   | number | objects sent to S3                           |
-| `downloaded` | number | objects fetched from S3                      |
-| `deleted`    | number | objects removed (at the destination)         |
-| `skipped`    | number | objects that already matched the destination |
+| `uploaded`   | number | Objects sent to S3                           |
+| `downloaded` | number | Objects fetched from S3                      |
+| `deleted`    | number | Objects removed (at the destination)         |
+| `skipped`    | number | Objects that already matched the destination |
 
 **Comparison strategy.** For each candidate, the action compares against the destination by S3 ETag:
 
@@ -187,20 +187,20 @@ zorb use @zorb/aws/ecr/push --with image=myapp:dev repository=myapp tags=latest 
 
 | Input              | Type               | Required | Default                             | Description                                                                                     |
 | ------------------ | ------------------ | -------- | ----------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `image`            | string             | yes      | —                                   | local image reference (`name:tag`, image ID, etc.)                                              |
+| `image`            | string             | yes      | —                                   | Local image reference (`name:tag`, image ID, etc.)                                              |
 | `repository`       | string             | yes      | —                                   | ECR repository name (no registry prefix)                                                        |
-| `tags`             | string \| string[] | no       | `['latest']`                        | tags to publish under                                                                           |
+| `tags`             | string \| string[] | no       | `['latest']`                        | Tags to publish under                                                                           |
 | `region`           | string             | no       | `AWS_REGION` / `AWS_DEFAULT_REGION` | AWS region of the ECR registry (overrides what `configure` set)                                 |
-| `createRepository` | boolean            | no       | `false`                             | create the repository (via `ecr:DescribeRepositories` + `CreateRepository`) if it doesn't exist |
-| `imageScanOnPush`  | boolean            | no       | `true`                              | scan-on-push setting when creating the repository                                               |
-| `immutable`        | boolean            | no       | `false`                             | use `IMMUTABLE` tag mutability when creating the repository                                     |
+| `createRepository` | boolean            | no       | `false`                             | Create the repository (via `ecr:DescribeRepositories` + `CreateRepository`) if it doesn't exist |
+| `imageScanOnPush`  | boolean            | no       | `true`                              | Scan-on-push setting when creating the repository                                               |
+| `immutable`        | boolean            | no       | `false`                             | Use `IMMUTABLE` tag mutability when creating the repository                                     |
 
 | Output       | Type     | Description                                                          |
 | ------------ | -------- | -------------------------------------------------------------------- |
-| `registry`   | string   | registry host (e.g. `{account}.dkr.ecr.{region}.amazonaws.com[.cn]`) |
+| `registry`   | string   | Registry host (e.g. `{account}.dkr.ecr.{region}.amazonaws.com[.cn]`) |
 | `accountId`  | string   | AWS account id extracted from the registry host                      |
-| `repository` | string   | the repository name (as supplied)                                    |
-| `imageUris`  | string[] | one fully-qualified `registry/repo:tag` per pushed tag               |
+| `repository` | string   | The repository name (as supplied)                                    |
+| `imageUris`  | string[] | One fully-qualified `registry/repo:tag` per pushed tag               |
 
 The registry URL comes from the `proxyEndpoint` returned by `ecr:GetAuthorizationToken`, so the action works unmodified
 in non-standard partitions (AWS China's `amazonaws.com.cn`, GovCloud, etc.).
@@ -235,19 +235,19 @@ zorb use @zorb/aws/lambda/invoke --with functionName=hello-world payload='{"name
 | ---------------- | ------- | -------- | ----------------------------------- | ------------------------------------------------------------------------------------------- |
 | `functionName`   | string  | yes      | —                                   | Lambda function name or ARN                                                                 |
 | `payload`        | any     | no       | —                                   | JSON-serialisable value (object/array/scalar) or a pre-serialised string                    |
-| `invocationType` | string  | no       | `RequestResponse`                   | one of `RequestResponse`, `Event`, `DryRun`                                                 |
-| `qualifier`      | string  | no       | —                                   | function version (`$LATEST`, `42`) or alias name                                            |
-| `region`         | string  | no       | `AWS_REGION` / `AWS_DEFAULT_REGION` | explicit AWS region (overrides what `configure` set)                                        |
+| `invocationType` | string  | no       | `RequestResponse`                   | One of `RequestResponse`, `Event`, `DryRun`                                                 |
+| `qualifier`      | string  | no       | —                                   | Function version (`$LATEST`, `42`) or alias name                                            |
+| `region`         | string  | no       | `AWS_REGION` / `AWS_DEFAULT_REGION` | Explicit AWS region (overrides what `configure` set)                                        |
 | `logType`        | string  | no       | `None`                              | `Tail` returns the last 4 KB of function logs and forwards each line to the step's info log |
-| `failOnError`    | boolean | no       | `true`                              | when Lambda returns a `FunctionError`, fail the step instead of returning it as an output   |
+| `failOnError`    | boolean | no       | `true`                              | When Lambda returns a `FunctionError`, fail the step instead of returning it as an output   |
 
 | Output            | Type                          | Description                                                                                                                                       |
 | ----------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `statusCode`      | number                        | HTTP status code returned by Lambda (200 sync, 202 async, 204 DryRun)                                                                             |
-| `response`        | object \| string \| undefined | parsed JSON value (object, array, number, boolean, string, or `null`) when the body is valid JSON; the raw string otherwise; `undefined` if empty |
+| `response`        | object \| string \| undefined | Parsed JSON value (object, array, number, boolean, string, or `null`) when the body is valid JSON; the raw string otherwise; `undefined` if empty |
 | `functionError`   | string?                       | `Handled` or `Unhandled` if Lambda reported an error                                                                                              |
-| `logs`            | string?                       | decoded log tail when `logType: Tail`                                                                                                             |
-| `executedVersion` | string?                       | the function version that actually ran                                                                                                            |
+| `logs`            | string?                       | Decoded log tail when `logType: Tail`                                                                                                             |
+| `executedVersion` | string?                       | The function version that actually ran                                                                                                            |
 
 `Event` invocations return immediately with `statusCode: 202` and an empty body, so `response` is undefined for that
 flow.
