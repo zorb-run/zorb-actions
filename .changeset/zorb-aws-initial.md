@@ -1,5 +1,5 @@
 ---
-'@zorb/aws': minor
+'@zorb/aws': patch
 ---
 
 Initial release of `@zorb/aws` — AWS service actions for zorb workflows, built on AWS SDK v3.
