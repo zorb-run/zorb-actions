@@ -4,9 +4,17 @@ Secret-loader actions for [zorb](https://github.com/zorb-run/zorb-cli) workflows
 run-scoped secret table via `context.setSecret(name, value)`; once registered, a secret is referenceable as
 `${{ secrets.<name> }}` in `with:` / `env:` and is automatically masked in subsequent step output.
 
-> Status: first cut. Offline-safe loaders only (`set`, `load-env`, `load-dotenv`, `load-file`). CLI- and SDK-wrapping
-> loaders (`load-1password`, `load-doppler`, `load-aws`, `load-vault`, `load-gcp`, `load-keychain`) ship in follow-up
-> releases.
+> Ships `set`, `load-env`, `load-dotenv`, and `load-file`. CLI- and SDK-wrapping loaders (`load-1password`,
+> `load-doppler`, `load-aws`, `load-vault`, `load-gcp`, `load-keychain`) ship in follow-up releases.
+
+## Install
+
+```sh
+npm install @zorb/secrets
+yarn add @zorb/secrets
+pnpm add @zorb/secrets
+bun add @zorb/secrets
+```
 
 ## Actions
 
@@ -22,7 +30,7 @@ secrets:
       value: super-secret
 ```
 
-| input   | type   | required | description                     |
+| Input   | Type   | Required | Description                     |
 | ------- | ------ | -------- | ------------------------------- |
 | `name`  | string | yes      | secret name                     |
 | `value` | string | yes      | secret value (registered as-is) |
@@ -39,7 +47,7 @@ secrets:
       keys: [STRIPE_KEY, DATABASE_URL]
 ```
 
-| input      | type               | required | default | description                           |
+| Input      | Type               | Required | Default | Description                           |
 | ---------- | ------------------ | -------- | ------- | ------------------------------------- |
 | `keys`     | string \| string[] | yes      | —       | env var names to promote              |
 | `required` | boolean            | no       | `true`  | error if any named env var is missing |
@@ -56,7 +64,7 @@ secrets:
       only: [API_KEY, DB_URL]
 ```
 
-| input      | type               | required | default | description                                     |
+| Input      | Type               | Required | Default | Description                                     |
 | ---------- | ------------------ | -------- | ------- | ----------------------------------------------- |
 | `path`     | string \| string[] | no       | `.env`  | path(s) resolved relative to the workflow's cwd |
 | `only`     | string \| string[] | no       | —       | only register keys in this list                 |
@@ -78,7 +86,7 @@ secrets:
       path: ./config/secrets.yml
 ```
 
-| input    | type               | required | default                 | description                                                          |
+| Input    | Type               | Required | Default                 | Description                                                          |
 | -------- | ------------------ | -------- | ----------------------- | -------------------------------------------------------------------- |
 | `path`   | string             | yes      | —                       | path resolved relative to the workflow's cwd                         |
 | `format` | string             | no       | inferred from extension | `json` or `yaml`; needed when the extension isn't `.json/.yml/.yaml` |

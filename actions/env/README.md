@@ -4,11 +4,20 @@ Env-var loader actions for [zorb](https://github.com/zorb-run/zorb-cli) workflow
 run-scoped env table via `context.setEnv(name, value)`; once registered, a name is referenceable as `${{ env.<name> }}`
 in `with:` / `env:` and is added to the subprocess env of subsequent `run:` steps.
 
-Sibling to [`@zorb/secrets`](../secrets) — same shape, but no masking. Use `@zorb/env` for non-secret config, and
-`@zorb/secrets` for anything that should be hidden from step output.
+Sibling to [`@zorb/secrets`](https://github.com/zorb-run/zorb-actions/tree/main/actions/secrets) — same shape, but no
+masking. Use `@zorb/env` for non-secret config, and `@zorb/secrets` for anything that should be hidden from step output.
 
-> Status: first cut. Offline-safe loaders only (`set`, `load-dotenv`, `load-file`, `load-ini`). Remote loaders
-> (`load-remote`, `load-aws-ssm`) ship in follow-up releases.
+> Ships `set`, `load-dotenv`, `load-file`, and `load-ini`. Remote loaders (`load-remote`, `load-aws-ssm`) ship in
+> follow-up releases.
+
+## Install
+
+```sh
+npm install @zorb/env
+yarn add @zorb/env
+pnpm add @zorb/env
+bun add @zorb/env
+```
 
 ## Actions
 
@@ -25,7 +34,7 @@ steps:
       value: production
 ```
 
-| input   | type   | required | description           |
+| Input   | Type   | Required | Description           |
 | ------- | ------ | -------- | --------------------- |
 | `name`  | string | yes      | env var name          |
 | `value` | string | yes      | env var value (as-is) |
@@ -44,7 +53,7 @@ steps:
       only: [DB_URL, PORT]
 ```
 
-| input      | type               | required | default | description                                     |
+| Input      | Type               | Required | Default | Description                                     |
 | ---------- | ------------------ | -------- | ------- | ----------------------------------------------- |
 | `path`     | string \| string[] | no       | `.env`  | path(s) resolved relative to the workflow's cwd |
 | `prefix`   | string             | no       | `''`    | string prepended to every registered name       |
@@ -71,7 +80,7 @@ steps:
       prefix: APP_
 ```
 
-| input    | type               | required | default                 | description                                                          |
+| Input    | Type               | Required | Default                 | Description                                                          |
 | -------- | ------------------ | -------- | ----------------------- | -------------------------------------------------------------------- |
 | `path`   | string             | yes      | —                       | path resolved relative to the workflow's cwd                         |
 | `format` | string             | no       | inferred from extension | `json` or `yaml`; needed when the extension isn't `.json/.yml/.yaml` |
@@ -100,7 +109,7 @@ steps:
       prefix: AWS_
 ```
 
-| input     | type               | required | default | description                                              |
+| Input     | Type               | Required | Default | Description                                              |
 | --------- | ------------------ | -------- | ------- | -------------------------------------------------------- |
 | `path`    | string             | yes      | —       | path resolved relative to the workflow's cwd             |
 | `section` | string             | no       | —       | section name; if omitted, only top-level keys are loaded |
@@ -112,7 +121,8 @@ Array-valued keys at the top level also error, since arrays don't map to a singl
 
 ## Secrets vs env
 
-If a value should be masked in step output, load it via [`@zorb/secrets`](../secrets) instead. The two tables are
+If a value should be masked in step output, load it via
+[`@zorb/secrets`](https://github.com/zorb-run/zorb-actions/tree/main/actions/secrets) instead. The two tables are
 separate — `setEnv` does **not** populate the secret table, and `setSecret` does **not** populate the env table — but
 they share the same loader patterns so workflows can layer both side-by-side.
 
